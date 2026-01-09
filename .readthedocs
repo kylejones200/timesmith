@@ -17,8 +17,6 @@ python:
       path: .
       extra_requirements:
         - docs
-      pip_install_options:
-        - --no-deps  # Let RTD handle dependencies
     - method: pip
       requirements: docs/requirements.txt
 
