@@ -1,5 +1,7 @@
 """Core base classes, tags, and validation for time series estimators."""
 
+import logging
+
 from timesmith.core.base import (
     BaseDetector,
     BaseEstimator,
@@ -23,6 +25,22 @@ from timesmith.core.transformers import (
 )
 from timesmith.core.validate import validate_input
 
+# Decomposition
+from timesmith.core.decomposition import (
+    DecomposeTransformer,
+    DetrendTransformer,
+    DeseasonalizeTransformer,
+    detect_trend,
+    detect_seasonality,
+)
+
+# Change point detection
+from timesmith.core.changepoint import (
+    PELTDetector,
+    BayesianChangePointDetector,
+    preprocess_for_changepoint,
+)
+
 __all__ = [
     "BaseObject",
     "BaseEstimator",
@@ -42,4 +60,22 @@ __all__ = [
     "set_tags",
     "validate_input",
 ]
+
+# Conditionally add decomposition exports
+if HAS_DECOMPOSITION:
+    __all__.extend([
+        "DecomposeTransformer",
+        "DetrendTransformer",
+        "DeseasonalizeTransformer",
+        "detect_trend",
+        "detect_seasonality",
+    ])
+
+# Conditionally add change point detection exports
+if HAS_CHANGEPOINT:
+    __all__.extend([
+        "PELTDetector",
+        "BayesianChangePointDetector",
+        "preprocess_for_changepoint",
+    ])
 

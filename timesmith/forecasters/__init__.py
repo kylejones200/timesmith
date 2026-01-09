@@ -7,6 +7,7 @@ from timesmith.forecasters.moving_average import (
     WeightedMovingAverageForecaster,
 )
 from timesmith.forecasters.exponential_smoothing import ExponentialSmoothingForecaster
+from timesmith.forecasters.monte_carlo import MonteCarloForecaster
 
 __all__ = [
     "ARIMAForecaster",
@@ -14,5 +15,6 @@ __all__ = [
     "ExponentialMovingAverageForecaster",
     "WeightedMovingAverageForecaster",
     "ExponentialSmoothingForecaster",
+    "MonteCarloForecaster",
 ]
 

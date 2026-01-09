@@ -34,6 +34,9 @@ network = [
 distances = [
   "tslearn>=0.6.0",  # For optimized DTW distance (optional)
 ]
+changepoint = [
+  "ruptures>=1.1.0",  # For PELT change point detection
+]
 dev = [
   "pytest>=7.0",
   "pytest-cov>=4.0",
@@ -60,6 +63,7 @@ all = [
   "ts2net>=0.6.0",
   "networkx>=3.0",
   "tslearn>=0.6.0",
+  "ruptures>=1.1.0",
   "pytest>=7.0",
   "pytest-cov>=4.0",
   "black>=23.0",

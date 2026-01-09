@@ -92,14 +92,22 @@ from timesmith.network import (
 
 # Core Featurizers and Transformers
 from timesmith.core import (
+    DecomposeTransformer,
+    DeseasonalizeTransformer,
+    DetrendTransformer,
     DifferencingFeaturizer,
     LagFeaturizer,
     MissingDateFiller,
     MissingValueFiller,
     OutlierRemover,
+    PELTDetector,
+    BayesianChangePointDetector,
     Resampler,
     RollingFeaturizer,
     TimeFeaturizer,
+    detect_seasonality,
+    detect_trend,
+    preprocess_for_changepoint,
 )
 
 # Forecasters
@@ -107,6 +115,7 @@ from timesmith.forecasters import (
     ARIMAForecaster,
     ExponentialMovingAverageForecaster,
     ExponentialSmoothingForecaster,
+    MonteCarloForecaster,
     SimpleMovingAverageForecaster,
     WeightedMovingAverageForecaster,
 )
@@ -174,12 +183,22 @@ __all__ = [
     "MissingValueFiller",
     "Resampler",
     "MissingDateFiller",
+    "DecomposeTransformer",
+    "DetrendTransformer",
+    "DeseasonalizeTransformer",
+    # Change Point Detection
+    "PELTDetector",
+    "BayesianChangePointDetector",
+    "preprocess_for_changepoint",
+    "detect_trend",
+    "detect_seasonality",
     # Forecasters
     "ARIMAForecaster",
     "SimpleMovingAverageForecaster",
     "ExponentialMovingAverageForecaster",
     "WeightedMovingAverageForecaster",
     "ExponentialSmoothingForecaster",
+    "MonteCarloForecaster",
     # Network
     "Graph",
     "HVGFeaturizer",
