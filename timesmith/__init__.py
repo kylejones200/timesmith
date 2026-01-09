@@ -78,6 +78,7 @@ from timesmith.utils import (
     load_ts_data,
     manhattan_distance,
     monte_carlo_simulation,
+    black_scholes_monte_carlo,
     parametric_confidence_intervals,
     partial_autocorrelation,
     plot_monte_carlo,
