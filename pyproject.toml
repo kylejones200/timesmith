@@ -19,13 +19,13 @@ requires-python = ">=3.9"
 dependencies = [
   "pandas>=1.5.0",
   "numpy>=1.20.0",
+  "scipy>=1.10.0",
 ]
 
 [project.optional-dependencies]
 forecasters = [
   "pmdarima>=2.0.0",  # For ARIMAForecaster
   "statsmodels>=0.14.0",  # For ExponentialSmoothingForecaster
-  "scipy>=1.10.0",  # For confidence intervals
 ]
 network = [
   "ts2net>=0.6.0",  # For network construction (HVG, NVG, etc.)
@@ -72,7 +72,6 @@ examples = [
 all = [
   "pmdarima>=2.0.0",
   "statsmodels>=0.14.0",
-  "scipy>=1.10.0",
   "ts2net>=0.6.0",
   "networkx>=3.0",
   "tslearn>=0.6.0",
