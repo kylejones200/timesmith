@@ -15,6 +15,187 @@ from timesmith.core.tags import set_tags
 logger = logging.getLogger(__name__)
 
 
+def conditional_transfer_entropy(
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    lag: int = 1,
+    bins: int = 10,
+) -> float:
+    """Compute conditional transfer entropy from X to Y given Z.
+
+    Conditional transfer entropy accounts for confounding variables Z,
+    measuring the direct causal influence from X to Y.
+
+    Args:
+        x: Source time series.
+        y: Target time series.
+        z: Conditioning time series (confounding variable).
+        lag: Time lag for past values.
+        bins: Number of bins for discretization.
+
+    Returns:
+        Conditional transfer entropy from X to Y given Z (non-negative, bits).
+    """
+    if not (len(x) == len(y) == len(z)):
+        raise ValueError("All series must have same length")
+
+    if lag < 1:
+        raise ValueError(f"lag must be >= 1, got {lag}")
+
+    if len(x) < lag + 1:
+        return 0.0
+
+    # Discretize series
+    x_min, x_max = np.nanmin(x), np.nanmax(x)
+    y_min, y_max = np.nanmin(y), np.nanmax(y)
+    z_min, z_max = np.nanmin(z), np.nanmax(z)
+
+    if x_min == x_max or y_min == y_max or z_min == z_max:
+        return 0.0
+
+    x_edges = np.linspace(x_min, x_max, bins + 1)
+    y_edges = np.linspace(y_min, y_max, bins + 1)
+    z_edges = np.linspace(z_min, z_max, bins + 1)
+    x_edges[-1] += 1e-10
+    y_edges[-1] += 1e-10
+    z_edges[-1] += 1e-10
+
+    x_disc = np.clip(np.digitize(x, x_edges) - 1, 0, bins - 1)
+    y_disc = np.clip(np.digitize(y, y_edges) - 1, 0, bins - 1)
+    z_disc = np.clip(np.digitize(z, z_edges) - 1, 0, bins - 1)
+
+    # Compute conditional entropies
+    y_t = y_disc[lag:]
+    y_past = y_disc[: len(y) - lag]
+    x_past = x_disc[: len(x) - lag]
+    z_past = z_disc[: len(z) - lag]
+
+    min_len = min(len(y_t), len(y_past), len(x_past), len(z_past))
+    y_t = y_t[:min_len]
+    y_past = y_past[:min_len]
+    x_past = x_past[:min_len]
+    z_past = z_past[:min_len]
+
+    # H(Y_t | Y_{t-lag}, Z_{t-lag})
+    joint_counts_yz = np.zeros((bins, bins, bins), dtype=np.int32)
+    for i in range(len(y_t)):
+        if (0 <= y_t[i] < bins and 0 <= y_past[i] < bins and 0 <= z_past[i] < bins):
+            joint_counts_yz[y_t[i], y_past[i], z_past[i]] += 1
+
+    total_yz = np.sum(joint_counts_yz)
+    if total_yz == 0:
+        return 0.0
+
+    joint_probs_yz = joint_counts_yz / total_yz
+    joint_entropy_yz = -np.sum(joint_probs_yz[joint_probs_yz > 0] * np.log2(joint_probs_yz[joint_probs_yz > 0]))
+
+    marginal_counts_yz = np.zeros((bins, bins), dtype=np.int32)
+    for i in range(len(y_past)):
+        if 0 <= y_past[i] < bins and 0 <= z_past[i] < bins:
+            marginal_counts_yz[y_past[i], z_past[i]] += 1
+
+    marginal_probs_yz = marginal_counts_yz / (np.sum(marginal_counts_yz) + 1e-10)
+    marginal_entropy_yz = -np.sum(marginal_probs_yz[marginal_probs_yz > 0] * np.log2(marginal_probs_yz[marginal_probs_yz > 0]))
+
+    h_y_given_yz = joint_entropy_yz - marginal_entropy_yz
+
+    # H(Y_t | Y_{t-lag}, X_{t-lag}, Z_{t-lag})
+    joint_counts_4d = np.zeros((bins, bins, bins, bins), dtype=np.int32)
+    for i in range(len(y_t)):
+        if (0 <= y_t[i] < bins and 0 <= y_past[i] < bins and
+            0 <= x_past[i] < bins and 0 <= z_past[i] < bins):
+            joint_counts_4d[y_t[i], y_past[i], x_past[i], z_past[i]] += 1
+
+    total_4d = np.sum(joint_counts_4d)
+    if total_4d == 0:
+        return 0.0
+
+    joint_probs_4d = joint_counts_4d / total_4d
+    joint_entropy_4d = -np.sum(joint_probs_4d[joint_probs_4d > 0] * np.log2(joint_probs_4d[joint_probs_4d > 0]))
+
+    marginal_counts_xyz = np.zeros((bins, bins, bins), dtype=np.int32)
+    for i in range(len(y_past)):
+        if (0 <= y_past[i] < bins and 0 <= x_past[i] < bins and 0 <= z_past[i] < bins):
+            marginal_counts_xyz[y_past[i], x_past[i], z_past[i]] += 1
+
+    marginal_probs_xyz = marginal_counts_xyz / (np.sum(marginal_counts_xyz) + 1e-10)
+    marginal_entropy_xyz = -np.sum(marginal_probs_xyz[marginal_probs_xyz > 0] * np.log2(marginal_probs_xyz[marginal_probs_xyz > 0]))
+
+    h_y_given_xyz = joint_entropy_4d - marginal_entropy_xyz
+
+    # Conditional transfer entropy
+    cte = h_y_given_yz - h_y_given_xyz
+    return float(max(0.0, cte))
+
+
+def transfer_entropy_network(
+    X: list,
+    lag: int = 1,
+    bins: int = 10,
+    threshold: Optional[float] = None,
+    series_names: Optional[list] = None
+):
+    """Construct a directed network based on transfer entropy between time series.
+
+    Each edge (i, j) represents causal influence from series i to series j,
+    weighted by the transfer entropy value.
+
+    Args:
+        X: List of time series arrays to analyze.
+        lag: Time lag for transfer entropy computation.
+        bins: Number of bins for discretization.
+        threshold: Minimum transfer entropy threshold for edges (if None, include all edges).
+        series_names: Names for each series (default: "Series_0", "Series_1", ...).
+
+    Returns:
+        Tuple of (NetworkX DiGraph, transfer entropy matrix, statistics dictionary).
+    """
+    import networkx as nx
+
+    n_series = len(X)
+    series_names = series_names or [f"Series_{i}" for i in range(n_series)]
+
+    if len(series_names) != n_series:
+        raise ValueError(
+            f"series_names length ({len(series_names)}) must match "
+            f"number of series ({n_series})"
+        )
+
+    te_matrix = np.zeros((n_series, n_series))
+
+    for i in range(n_series):
+        for j in range(n_series):
+            if i != j:
+                te_matrix[i, j] = transfer_entropy(
+                    X[i], X[j], lag=lag, bins=bins
+                )
+
+    G = nx.DiGraph()
+    G.add_nodes_from(range(n_series))
+
+    for i in range(n_series):
+        for j in range(n_series):
+            if i != j:
+                te_val = te_matrix[i, j]
+                if threshold is None or te_val >= threshold:
+                    G.add_edge(i, j, weight=te_val)
+
+    for i, name in enumerate(series_names):
+        G.nodes[i]['name'] = name
+
+    stats = {
+        'mean_te': float(np.mean(te_matrix[te_matrix > 0])) if np.any(te_matrix > 0) else 0.0,
+        'max_te': float(np.max(te_matrix)),
+        'min_te': float(np.min(te_matrix[te_matrix > 0])) if np.any(te_matrix > 0) else 0.0,
+        'std_te': float(np.std(te_matrix[te_matrix > 0])) if np.any(te_matrix > 0) else 0.0,
+        'n_edges': G.number_of_edges(),
+        'density': G.number_of_edges() / (n_series * (n_series - 1)) if n_series > 1 else 0.0,
+    }
+
+    return G, te_matrix, stats
+
+
 def transfer_entropy(
     x: np.ndarray,
     y: np.ndarray,

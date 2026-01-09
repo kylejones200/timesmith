@@ -20,6 +20,7 @@ dependencies = [
   "pandas>=1.5.0",
   "numpy>=1.20.0",
   "scipy>=1.10.0",
+  "networkx>=3.0",
 ]
 
 [project.optional-dependencies]
@@ -28,7 +29,7 @@ forecasters = [
   "statsmodels>=0.14.0",  # For ExponentialSmoothingForecaster
 ]
 network = [
-  "networkx>=3.0",  # For network metrics and analysis
+  # networkx is now a core dependency
 ]
 distances = [
   "tslearn>=0.6.0",  # For optimized DTW distance (optional)
