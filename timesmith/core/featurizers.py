@@ -289,3 +289,66 @@ class DifferencingFeaturizer(BaseFeaturizer):
 
         return df
 
+
+class DegradationRateFeaturizer(BaseFeaturizer):
+    """Create degradation rate features (rate of change) from time series.
+
+    Transforms SeriesLike to TableLike by creating percentage change features.
+    """
+
+    def __init__(self, periods: List[int] = [1, 3, 5]):
+        """Initialize degradation rate featurizer.
+
+        Args:
+            periods: List of periods for rate of change calculation.
+        """
+        self.periods = periods
+        set_tags(
+            self,
+            scitype_input="SeriesLike",
+            scitype_output="TableLike",
+            handles_missing=False,
+            requires_sorted_index=True,
+        )
+
+    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "DegradationRateFeaturizer":
+        """Fit the featurizer (no-op for degradation rates).
+
+        Args:
+            y: Target time series.
+            X: Optional exogenous data (ignored).
+            **fit_params: Additional fit parameters.
+
+        Returns:
+            Self for method chaining.
+        """
+        self._is_fitted = True
+        return self
+
+    def transform(self, y: Any, X: Optional[Any] = None) -> pd.DataFrame:
+        """Create degradation rate features.
+
+        Args:
+            y: SeriesLike data.
+            X: Optional exogenous data (ignored).
+
+        Returns:
+            TableLike DataFrame with degradation rate features.
+        """
+        self._check_is_fitted()
+
+        if isinstance(y, pd.Series):
+            series = y
+        elif isinstance(y, pd.DataFrame) and y.shape[1] == 1:
+            series = y.iloc[:, 0]
+        else:
+            raise ValueError("y must be SeriesLike (Series or single-column DataFrame)")
+
+        df = pd.DataFrame({"value": series})
+
+        for period in self.periods:
+            # Calculate percentage change (rate of change)
+            df[f"degradation_rate_{period}"] = series.pct_change(periods=period)
+
+        return df
+

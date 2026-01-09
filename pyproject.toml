@@ -47,6 +47,9 @@ ensemble = [
 statsmodels = [
   "statsmodels>=0.14.0",  # For stationarity tests and advanced time series analysis
 ]
+wavelet = [
+  "PyWavelets>=1.4.0",  # For wavelet-based denoising and anomaly detection
+]
 dev = [
   "pytest>=7.0",
   "pytest-cov>=4.0",
@@ -77,6 +80,7 @@ all = [
   "pymc>=5.0.0",
   "arviz>=0.15.0",
   "scikit-learn>=1.0.0",
+  "PyWavelets>=1.4.0",
   "pytest>=7.0",
   "pytest-cov>=4.0",
   "black>=23.0",

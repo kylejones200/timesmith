@@ -11,6 +11,7 @@ from timesmith.core.base import (
     BaseTransformer,
 )
 from timesmith.core.featurizers import (
+    DegradationRateFeaturizer,
     DifferencingFeaturizer,
     LagFeaturizer,
     RollingFeaturizer,
@@ -72,6 +73,19 @@ try:
 except ImportError:
     HAS_ADVANCED_OUTLIERS = False
 
+# Wavelet methods (optional PyWavelets)
+try:
+    from timesmith.core.wavelet import (
+        WaveletDenoiser,
+        WaveletDetector,
+    )
+    HAS_WAVELET = True
+except ImportError:
+    HAS_WAVELET = False
+
+# Seasonal baseline detection (always available)
+from timesmith.core.seasonal import SeasonalBaselineDetector
+
 __all__ = [
     "BaseObject",
     "BaseEstimator",
@@ -83,6 +97,8 @@ __all__ = [
     "RollingFeaturizer",
     "TimeFeaturizer",
     "DifferencingFeaturizer",
+    "DegradationRateFeaturizer",
+    "DegradationRateFeaturizer",
     "OutlierRemover",
     "MissingValueFiller",
     "Resampler",
@@ -125,4 +141,14 @@ if HAS_ADVANCED_OUTLIERS:
         "IsolationForestOutlierRemover",
         "ZScoreOutlierRemover",
     ])
+
+# Conditionally add wavelet exports
+if HAS_WAVELET:
+    __all__.extend([
+        "WaveletDenoiser",
+        "WaveletDetector",
+    ])
+
+# Seasonal baseline detector (always available)
+__all__.append("SeasonalBaselineDetector")
 
