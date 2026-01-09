@@ -56,7 +56,7 @@ def plot_monte_carlo(
     title: str = "Monte Carlo Simulation",
     save_path: Optional[str] = None,
 ) -> None:
-    """Plot the Monte Carlo simulation results.
+    """Plot the Monte Carlo simulation results using plotsmith.
 
     Args:
         prices: Array of simulated paths from monte_carlo_simulation.
@@ -64,26 +64,28 @@ def plot_monte_carlo(
         save_path: Optional path to save the plot.
 
     Raises:
-        ImportError: If matplotlib is not installed.
+        ImportError: If plotsmith is not installed.
     """
-    if not HAS_MATPLOTLIB:
-        raise ImportError(
-            "matplotlib is required for plot_monte_carlo. "
-            "Install with: pip install matplotlib"
+    try:
+        from timesmith.utils.plotting import plot_monte_carlo_paths
+        import matplotlib.pyplot as plt
+        
+        fig, ax = plot_monte_carlo_paths(
+            prices,
+            title=title,
+            show_mean=True,
+            show_percentiles=True
         )
-
-    plt.figure(figsize=(10, 5))
-    plt.plot(prices, color="gray", alpha=0.3)
-    plt.plot(prices.mean(axis=1), color="black", linewidth=2, label="Mean Path")
-    plt.title(title)
-    plt.xlabel("Days")
-    plt.ylabel("Simulated Value")
-    plt.legend()
-
-    if save_path:
-        plt.savefig(save_path)
-    else:
-        plt.show()
-
-    plt.close()
+        
+        if save_path:
+            fig.savefig(save_path)
+        else:
+            plt.show()
+        
+        plt.close(fig)
+    except ImportError:
+        raise ImportError(
+            "plotsmith is required for plot_monte_carlo. "
+            "Install with: pip install plotsmith"
+        )
 

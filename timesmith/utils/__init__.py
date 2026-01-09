@@ -18,23 +18,51 @@ from timesmith.utils.distances import (
     manhattan_distance,
 )
 
-# Optional matplotlib-dependent imports
-try:
-    from timesmith.utils.monte_carlo import monte_carlo_simulation, plot_monte_carlo
-    HAS_MONTE_CARLO = True
-except ImportError:
-    HAS_MONTE_CARLO = False
-    # Define stubs to avoid import errors
-    def monte_carlo_simulation(*args, **kwargs):
-        raise ImportError(
-            "matplotlib is required for monte_carlo_simulation. "
-            "Install with: pip install matplotlib"
-        )
+# Monte Carlo simulation (always available)
+from timesmith.utils.monte_carlo import monte_carlo_simulation
 
+# Optional plotting utilities (requires plotsmith)
+try:
+    from timesmith.utils.plotting import (
+        plot_timeseries,
+        plot_forecast,
+        plot_residuals,
+        plot_multiple_series,
+        plot_autocorrelation,
+        plot_monte_carlo_paths,
+    )
+    from timesmith.utils.monte_carlo import plot_monte_carlo
+    HAS_PLOTTING = True
+except ImportError:
+    HAS_PLOTTING = False
+    # Define stubs to avoid import errors
+    def plot_timeseries(*args, **kwargs):
+        raise ImportError(
+            "plotsmith is required for plotting. Install with: pip install plotsmith"
+        )
+    def plot_forecast(*args, **kwargs):
+        raise ImportError(
+            "plotsmith is required for plotting. Install with: pip install plotsmith"
+        )
+    def plot_residuals(*args, **kwargs):
+        raise ImportError(
+            "plotsmith is required for plotting. Install with: pip install plotsmith"
+        )
+    def plot_multiple_series(*args, **kwargs):
+        raise ImportError(
+            "plotsmith is required for plotting. Install with: pip install plotsmith"
+        )
+    def plot_autocorrelation(*args, **kwargs):
+        raise ImportError(
+            "plotsmith is required for plotting. Install with: pip install plotsmith"
+        )
+    def plot_monte_carlo_paths(*args, **kwargs):
+        raise ImportError(
+            "plotsmith is required for plotting. Install with: pip install plotsmith"
+        )
     def plot_monte_carlo(*args, **kwargs):
         raise ImportError(
-            "matplotlib is required for plot_monte_carlo. "
-            "Install with: pip install matplotlib"
+            "plotsmith is required for plotting. Install with: pip install plotsmith"
         )
 
 # Stationarity tests (optional statsmodels)
@@ -83,6 +111,7 @@ __all__ = [
     # Monte Carlo
     "monte_carlo_simulation",
     "plot_monte_carlo",
+    # Plotting (if plotsmith available)
     # Distance metrics
     "correlation_distance",
     "cross_correlation_distance",
@@ -120,4 +149,15 @@ __all__.extend([
     "bootstrap_confidence_intervals",
     "parametric_confidence_intervals",
 ])
+
+# Conditionally add plotting functions
+if HAS_PLOTTING:
+    __all__.extend([
+        "plot_timeseries",
+        "plot_forecast",
+        "plot_residuals",
+        "plot_multiple_series",
+        "plot_autocorrelation",
+        "plot_monte_carlo_paths",
+    ])
 
