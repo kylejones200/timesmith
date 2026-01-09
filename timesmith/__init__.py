@@ -179,6 +179,7 @@ except ImportError:
 # Forecasters
 from timesmith.forecasters import (
     ARIMAForecaster,
+    BlackScholesMonteCarloForecaster,
     ExponentialMovingAverageForecaster,
     ExponentialSmoothingForecaster,
     MonteCarloForecaster,
