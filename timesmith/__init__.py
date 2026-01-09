@@ -365,6 +365,18 @@ if HAS_PLOTTING:
         "plot_monte_carlo_paths",
     ])
 
+# Conditionally add AnomSmith compatibility
+if HAS_ANOMSMITH_ADAPTER:
+    __all__.append("AnomSmithAdapter")
+
+if HAS_ANOMSMITH_COMPAT:
+    __all__.extend([
+        "convert_to_anomsmith_format",
+        "convert_from_anomsmith_format",
+        "get_anomsmith_detector",
+        "list_anomsmith_detectors",
+    ])
+
 # Conditionally add optional components
 if HAS_BAYESIAN:
     __all__.append("BayesianForecaster")
