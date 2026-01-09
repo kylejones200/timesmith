@@ -51,6 +51,12 @@ from timesmith.utils.climatology import (
     detect_extreme_events,
 )
 
+# Sequence creation utilities (always available)
+from timesmith.utils.sequences import (
+    create_sequences,
+    create_sequences_with_exog,
+)
+
 __all__ = [
     # Time series utilities
     "load_ts_data",
@@ -81,5 +87,11 @@ __all__.extend([
     "compute_climatology",
     "compute_anomalies",
     "detect_extreme_events",
+])
+
+# Sequence creation utilities
+__all__.extend([
+    "create_sequences",
+    "create_sequences_with_exog",
 ])
 

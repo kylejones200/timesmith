@@ -86,6 +86,9 @@ except ImportError:
 # Seasonal baseline detection (always available)
 from timesmith.core.seasonal import SeasonalBaselineDetector
 
+# Ensemble detection (always available)
+from timesmith.core.ensemble_detector import VotingEnsembleDetector
+
 __all__ = [
     "BaseObject",
     "BaseEstimator",
@@ -151,4 +154,7 @@ if HAS_WAVELET:
 
 # Seasonal baseline detector (always available)
 __all__.append("SeasonalBaselineDetector")
+
+# Ensemble detector (always available)
+__all__.append("VotingEnsembleDetector")
 

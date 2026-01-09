@@ -9,6 +9,7 @@ from timesmith.forecasters.moving_average import (
 from timesmith.forecasters.exponential_smoothing import ExponentialSmoothingForecaster
 from timesmith.forecasters.monte_carlo import MonteCarloForecaster
 from timesmith.forecasters.linear_trend import LinearTrendForecaster
+from timesmith.forecasters.synthetic_control import SyntheticControlForecaster
 
 # Optional Bayesian forecaster
 try:
@@ -32,6 +33,7 @@ __all__ = [
     "ExponentialSmoothingForecaster",
     "MonteCarloForecaster",
     "LinearTrendForecaster",
+    "SyntheticControlForecaster",
 ]
 
 if HAS_BAYESIAN:

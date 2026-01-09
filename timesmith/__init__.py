@@ -61,6 +61,8 @@ from timesmith.results import BacktestResult, Forecast
 # Utils
 from timesmith.utils import (
     correlation_distance,
+    create_sequences,
+    create_sequences_with_exog,
     cross_correlation_distance,
     detect_frequency,
     dtw_distance,
@@ -120,6 +122,7 @@ from timesmith.core import (
     BayesianChangePointDetector,
     CUSUMDetector,
     Resampler,
+    VotingEnsembleDetector,
     RollingFeaturizer,
     TimeFeaturizer,
     detect_seasonality,
@@ -239,6 +242,8 @@ __all__ = [
     "WeightedMovingAverageForecaster",
     "ExponentialSmoothingForecaster",
     "MonteCarloForecaster",
+    "LinearTrendForecaster",
+    "SyntheticControlForecaster",
     # Filters (conditionally exported)
     # Stationarity tests (conditionally exported)
     # Network
