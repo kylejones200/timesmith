@@ -257,6 +257,7 @@ __all__ = [
     "fill_missing_dates",
     "remove_outliers_iqr",
     "monte_carlo_simulation",
+    "black_scholes_monte_carlo",
     "plot_monte_carlo",
     # Plotting utilities (if plotsmith available)
     "autocorrelation",
@@ -291,6 +292,7 @@ __all__ = [
     "WeightedMovingAverageForecaster",
     "ExponentialSmoothingForecaster",
     "MonteCarloForecaster",
+    "BlackScholesMonteCarloForecaster",
     "LinearTrendForecaster",
     "SyntheticControlForecaster",
     # Filters (conditionally exported)

@@ -19,7 +19,10 @@ from timesmith.utils.distances import (
 )
 
 # Monte Carlo simulation (always available)
-from timesmith.utils.monte_carlo import monte_carlo_simulation
+from timesmith.utils.monte_carlo import (
+    monte_carlo_simulation,
+    black_scholes_monte_carlo,
+)
 
 # Optional plotting utilities (requires plotsmith)
 try:
@@ -110,6 +113,7 @@ __all__ = [
     "detect_anomalies_mad",
     # Monte Carlo
     "monte_carlo_simulation",
+    "black_scholes_monte_carlo",
     "plot_monte_carlo",
     # Plotting (if plotsmith available)
     # Distance metrics

@@ -1,10 +1,13 @@
 """Monte Carlo simulation utilities for time series."""
 
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
+
+from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +52,88 @@ def monte_carlo_simulation(
         prices[t] = prices[t - 1] * np.exp(random_shock)
 
     return prices
+
+
+def black_scholes_monte_carlo(
+    historical_data: SeriesLike,
+    forecast_days: int,
+    n_simulations: int = 1000,
+    random_state: Optional[int] = None,
+) -> np.ndarray:
+    """Black-Scholes Monte Carlo simulation for asset price forecasting.
+
+    Estimates drift and volatility from historical log returns and simulates
+    future price paths using geometric Brownian motion. This is the standard
+    approach used in option pricing and financial forecasting.
+
+    The model assumes:
+    - Log returns are normally distributed
+    - Market is efficient (random walk)
+    - Geometric Brownian motion: ΔS = S * (μΔt + σε√Δt)
+
+    Args:
+        historical_data: Historical price series (pandas Series with datetime index).
+        forecast_days: Number of days to forecast.
+        n_simulations: Number of simulation paths to generate.
+        random_state: Random seed for reproducibility.
+
+    Returns:
+        Array of shape (forecast_days, n_simulations) with simulated price paths.
+        Each column represents one simulation path.
+
+    Example:
+        >>> import pandas as pd
+        >>> import numpy as np
+        >>> dates = pd.date_range('2020-01-01', periods=100, freq='D')
+        >>> prices = pd.Series(100 + np.random.randn(100).cumsum(), index=dates)
+        >>> paths = black_scholes_monte_carlo(prices, forecast_days=30, n_simulations=1000)
+        >>> print(paths.shape)  # (30, 1000)
+    """
+    if random_state is not None:
+        np.random.seed(random_state)
+
+    # Convert to Series if needed
+    if isinstance(historical_data, pd.DataFrame):
+        if historical_data.shape[1] == 1:
+            historical_data = historical_data.iloc[:, 0]
+        else:
+            raise ValueError("DataFrame must have exactly one column")
+
+    # Ensure we have a pandas Series with numeric values
+    if not isinstance(historical_data, pd.Series):
+        historical_data = pd.Series(historical_data)
+
+    # Calculate log returns: log(1 + pct_change) = log(S_t / S_{t-1})
+    log_returns = np.log(1 + historical_data.pct_change()).dropna()
+
+    if len(log_returns) < 2:
+        raise ValueError("Need at least 2 data points to calculate returns")
+
+    # Estimate parameters from historical data
+    u = log_returns.mean()  # Mean log return
+    var = log_returns.var()  # Variance of log returns
+    drift = u - (0.5 * var)  # Adjusted drift for geometric Brownian motion
+    stdev = log_returns.std()  # Standard deviation (volatility)
+
+    # Get initial price (last observed price)
+    S0 = historical_data.iloc[-1]
+
+    # Generate random shocks for all simulations and all time steps
+    # Using inverse normal CDF (ppf) for better distribution properties
+    random_shocks = norm.ppf(np.random.rand(forecast_days, n_simulations))
+
+    # Calculate daily returns: exp(drift + stdev * random_shock)
+    daily_returns = np.exp(drift + stdev * random_shocks)
+
+    # Initialize price matrix
+    price_paths = np.zeros((forecast_days, n_simulations))
+    price_paths[0] = S0
+
+    # Apply Monte Carlo simulation: S_t = S_{t-1} * daily_return_t
+    for t in range(1, forecast_days):
+        price_paths[t] = price_paths[t - 1] * daily_returns[t]
+
+    return price_paths
 
 
 def plot_monte_carlo(
