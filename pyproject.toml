@@ -70,6 +70,9 @@ examples = [
   "ipykernel>=6.0",
   "plotsmith>=0.1.0",  # For plotting utilities
 ]
+anomsmith = [
+  "anomsmith>=0.1.0",  # For anomaly detection compatibility
+]
 all = [
   "pmdarima>=2.0.0",
   "statsmodels>=0.14.0",

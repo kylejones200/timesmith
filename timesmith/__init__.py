@@ -39,6 +39,26 @@ from timesmith.compose import (
     make_pipeline,
 )
 
+# Optional AnomSmith adapter
+try:
+    from timesmith.compose.anomsmith_adapter import AnomSmithAdapter
+    HAS_ANOMSMITH_ADAPTER = True
+except ImportError:
+    HAS_ANOMSMITH_ADAPTER = False
+
+# Optional AnomSmith compatibility utilities
+try:
+    from timesmith.utils.anomsmith_compat import (
+        convert_to_anomsmith_format,
+        convert_from_anomsmith_format,
+        get_anomsmith_detector,
+        list_anomsmith_detectors,
+        HAS_ANOMSMITH,
+    )
+    HAS_ANOMSMITH_COMPAT = HAS_ANOMSMITH
+except ImportError:
+    HAS_ANOMSMITH_COMPAT = False
+
 # Tasks
 from timesmith.tasks import DetectTask, ForecastTask
 
