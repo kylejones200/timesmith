@@ -132,6 +132,7 @@ from timesmith.core import (
     Resampler,
     VotingEnsembleDetector,
     RollingFeaturizer,
+    SeasonalFeaturizer,
     TimeFeaturizer,
     detect_seasonality,
     detect_trend,
