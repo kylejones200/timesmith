@@ -25,21 +25,30 @@ from timesmith.core.transformers import (
 )
 from timesmith.core.validate import validate_input
 
-# Decomposition
-from timesmith.core.decomposition import (
-    DecomposeTransformer,
-    DetrendTransformer,
-    DeseasonalizeTransformer,
-    detect_trend,
-    detect_seasonality,
-)
+# Decomposition (always available - no optional deps)
+try:
+    from timesmith.core.decomposition import (
+        DecomposeTransformer,
+        DetrendTransformer,
+        DeseasonalizeTransformer,
+        detect_trend,
+        detect_seasonality,
+    )
+    HAS_DECOMPOSITION = True
+except ImportError as e:
+    HAS_DECOMPOSITION = False
+    logger.warning(f"Decomposition module not available: {e}")
 
-# Change point detection
-from timesmith.core.changepoint import (
-    PELTDetector,
-    BayesianChangePointDetector,
-    preprocess_for_changepoint,
-)
+# Change point detection (requires optional ruptures)
+try:
+    from timesmith.core.changepoint import (
+        PELTDetector,
+        BayesianChangePointDetector,
+        preprocess_for_changepoint,
+    )
+    HAS_CHANGEPOINT = True
+except ImportError:
+    HAS_CHANGEPOINT = False
 
 __all__ = [
     "BaseObject",

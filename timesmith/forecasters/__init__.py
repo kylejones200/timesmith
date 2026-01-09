@@ -9,6 +9,13 @@ from timesmith.forecasters.moving_average import (
 from timesmith.forecasters.exponential_smoothing import ExponentialSmoothingForecaster
 from timesmith.forecasters.monte_carlo import MonteCarloForecaster
 
+# Optional Bayesian forecaster
+try:
+    from timesmith.forecasters.bayesian import BayesianForecaster
+    HAS_BAYESIAN = True
+except ImportError:
+    HAS_BAYESIAN = False
+
 __all__ = [
     "ARIMAForecaster",
     "SimpleMovingAverageForecaster",
@@ -17,4 +24,7 @@ __all__ = [
     "ExponentialSmoothingForecaster",
     "MonteCarloForecaster",
 ]
+
+if HAS_BAYESIAN:
+    __all__.append("BayesianForecaster")
 

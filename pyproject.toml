@@ -37,6 +37,10 @@ distances = [
 changepoint = [
   "ruptures>=1.1.0",  # For PELT change point detection
 ]
+bayesian = [
+  "pymc>=5.0.0",  # For Bayesian forecasting
+  "arviz>=0.15.0",  # For Bayesian diagnostics and visualization
+]
 dev = [
   "pytest>=7.0",
   "pytest-cov>=4.0",
@@ -64,6 +68,8 @@ all = [
   "networkx>=3.0",
   "tslearn>=0.6.0",
   "ruptures>=1.1.0",
+  "pymc>=5.0.0",
+  "arviz>=0.15.0",
   "pytest>=7.0",
   "pytest-cov>=4.0",
   "black>=23.0",

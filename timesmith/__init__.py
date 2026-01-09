@@ -120,6 +120,13 @@ from timesmith.forecasters import (
     WeightedMovingAverageForecaster,
 )
 
+# Optional Bayesian forecaster
+try:
+    from timesmith.forecasters.bayesian import BayesianForecaster
+    HAS_BAYESIAN = True
+except ImportError:
+    HAS_BAYESIAN = False
+
 __all__ = [
     # Typing
     "SeriesLike",
@@ -219,4 +226,8 @@ __all__ = [
     "euclidean_distance",
     "manhattan_distance",
 ]
+
+# Conditionally add Bayesian forecaster
+if HAS_BAYESIAN:
+    __all__.append("BayesianForecaster")
 
