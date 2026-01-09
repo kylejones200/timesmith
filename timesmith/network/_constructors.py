@@ -49,6 +49,58 @@ def _hvg_visibility_check(series: np.ndarray, i: int, j: int, limit_val: int) ->
     return True
 
 
+@njit(cache=True)
+def _recurrence_edges_numba_knn(distances: np.ndarray, threshold: np.ndarray):
+    """Find recurrence network edges using k-NN rule (JIT-compiled).
+
+    Args:
+        distances: Distance matrix (n, n).
+        threshold: Per-node threshold array (n,).
+
+    Returns:
+        Array of edge pairs (n_edges, 2).
+    """
+    n = distances.shape[0]
+    max_edges = n * (n - 1) // 2
+    edges = np.zeros((max_edges, 2), dtype=np.int64)
+    edge_count = 0
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            if distances[i, j] <= threshold[i] or distances[i, j] <= threshold[j]:
+                edges[edge_count, 0] = i
+                edges[edge_count, 1] = j
+                edge_count += 1
+
+    return edges[:edge_count]
+
+
+@njit(cache=True)
+def _recurrence_edges_numba_epsilon(distances: np.ndarray, threshold: float):
+    """Find recurrence network edges using epsilon rule (JIT-compiled).
+
+    Args:
+        distances: Distance matrix (n, n).
+        threshold: Single threshold value.
+
+    Returns:
+        Array of edge pairs (n_edges, 2).
+    """
+    n = distances.shape[0]
+    max_edges = n * (n - 1) // 2
+    edges = np.zeros((max_edges, 2), dtype=np.int64)
+    edge_count = 0
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            if distances[i, j] <= threshold:
+                edges[edge_count, 0] = i
+                edges[edge_count, 1] = j
+                edge_count += 1
+
+    return edges[:edge_count]
+
+
 @njit(cache=True, fastmath=True)
 def _nvg_visibility_check(series: np.ndarray, i: int, j: int, limit_val: int) -> bool:
     """Check natural visibility between nodes i and j (JIT-compiled).
@@ -380,10 +432,32 @@ def build_recurrence_network(
         # Default: use 10th percentile of distances
         threshold = np.percentile(distances[distances > 0], 10)
 
-    # Build graph (vectorized edge creation)
+    # Build graph (vectorized edge creation, with optional JIT)
     G = nx.Graph()
     G.add_nodes_from(range(len(vectors)))
 
+    n_vec = len(vectors)
+    
+    # Use JIT-compiled edge finding if available
+    if HAS_NUMBA and n_vec > 100:
+        try:
+            if rule == "knn":
+                # Ensure threshold is array for k-NN
+                if not isinstance(threshold, np.ndarray):
+                    threshold = np.array([threshold] * n_vec)
+                edges = _recurrence_edges_numba_knn(distances, threshold)
+            else:
+                # Epsilon rule: ensure threshold is scalar
+                thresh_val = float(threshold) if isinstance(threshold, np.ndarray) else threshold
+                edges = _recurrence_edges_numba_epsilon(distances, thresh_val)
+            G.add_edges_from(edges)
+            return G
+        except Exception as e:
+            # Fallback to vectorized approach
+            logger.debug(f"Numba JIT failed for recurrence network, using vectorized fallback: {e}")
+            pass
+
+    # Vectorized approach (or fallback)
     if rule == "knn":
         # For k-NN, use per-node threshold (vectorized)
         # Create mask: edge exists if distance <= threshold[i] OR distance <= threshold[j]

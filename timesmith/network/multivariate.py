@@ -23,6 +23,37 @@ except ImportError:
     prange = range
 
 
+@njit(cache=True)
+def _knn_adjacency_numba(D: np.ndarray, k: int, weighted: bool) -> np.ndarray:
+    """Compute k-NN adjacency matrix using Numba JIT (fast path).
+
+    Args:
+        D: Distance matrix (n, n).
+        k: Number of nearest neighbors.
+        weighted: If True, use distances as weights.
+
+    Returns:
+        Adjacency matrix (n, n).
+    """
+    n = D.shape[0]
+    A = np.zeros((n, n))
+
+    for i in range(n):
+        # Find k nearest neighbors (excluding self)
+        row = D[i].copy()
+        row[i] = np.inf  # Exclude self
+        neighbors = np.argpartition(row, k - 1)[:k]
+
+        # Assign weights
+        for j in neighbors:
+            if weighted:
+                A[i, j] = D[i, j]
+            else:
+                A[i, j] = 1.0
+
+    return A
+
+
 def net_knn(
     D: np.ndarray,
     k: int,
@@ -52,22 +83,36 @@ def net_knn(
     if k <= 0 or k >= n:
         raise ValueError(f"k must be in range [1, {n-1}], got {k}")
 
-    # Create adjacency matrix
-    A = np.zeros((n, n))
+    # Use Numba JIT if available (much faster for large matrices)
+    if HAS_NUMBA and n > 50:  # Only use JIT for larger matrices
+        try:
+            A = _knn_adjacency_numba(D, k, weighted)
+        except Exception as e:
+            # Fallback to Python implementation
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Numba JIT failed for k-NN, using Python fallback: {e}")
+            # Continue to Python implementation below
+            A = None
+    else:
+        A = None
 
-    # Use vectorized approach for k-NN (faster than loop)
-    # For each row, find k smallest (excluding diagonal)
-    for i in range(n):
-        # Find k nearest neighbors (excluding self)
-        row = D[i].copy()
-        row[i] = np.inf  # Exclude self
-        neighbors = np.argpartition(row, k - 1)[:k]
+    # Python fallback (or for small matrices)
+    if A is None:
+        A = np.zeros((n, n))
+        # Use vectorized approach for k-NN (faster than loop)
+        # For each row, find k smallest (excluding diagonal)
+        for i in range(n):
+            # Find k nearest neighbors (excluding self)
+            row = D[i].copy()
+            row[i] = np.inf  # Exclude self
+            neighbors = np.argpartition(row, k - 1)[:k]
 
-        # Vectorized assignment
-        if weighted:
-            A[i, neighbors] = D[i, neighbors]
-        else:
-            A[i, neighbors] = 1.0
+            # Vectorized assignment
+            if weighted:
+                A[i, neighbors] = D[i, neighbors]
+            else:
+                A[i, neighbors] = 1.0
 
     # Apply mutual k-NN constraint
     if mutual:

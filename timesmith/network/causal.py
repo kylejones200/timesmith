@@ -14,6 +14,108 @@ from timesmith.core.tags import set_tags
 
 logger = logging.getLogger(__name__)
 
+# Try to import numba for JIT compilation (optional)
+try:
+    from numba import njit
+    HAS_NUMBA = True
+except ImportError:
+    HAS_NUMBA = False
+    def njit(*args, **kwargs):
+        def decorator(func):
+            return func
+        if args and callable(args[0]):
+            return args[0]
+        return decorator
+
+
+@njit(cache=True)
+def _count_joint_2d(indices1: np.ndarray, indices2: np.ndarray, bins: int) -> np.ndarray:
+    """Count joint 2D histogram using Numba JIT (fast path).
+
+    Args:
+        indices1: First dimension indices (clipped to [0, bins-1]).
+        indices2: Second dimension indices (clipped to [0, bins-1]).
+        bins: Number of bins.
+
+    Returns:
+        Joint count matrix (bins, bins).
+    """
+    counts = np.zeros((bins, bins), dtype=np.int32)
+    n = len(indices1)
+    for i in range(n):
+        idx1 = int(indices1[i])
+        idx2 = int(indices2[i])
+        if 0 <= idx1 < bins and 0 <= idx2 < bins:
+            counts[idx1, idx2] += 1
+    return counts
+
+
+@njit(cache=True)
+def _count_joint_3d(indices1: np.ndarray, indices2: np.ndarray, indices3: np.ndarray, bins: int) -> np.ndarray:
+    """Count joint 3D histogram using Numba JIT (fast path).
+
+    Args:
+        indices1: First dimension indices (clipped to [0, bins-1]).
+        indices2: Second dimension indices (clipped to [0, bins-1]).
+        indices3: Third dimension indices (clipped to [0, bins-1]).
+        bins: Number of bins.
+
+    Returns:
+        Joint count tensor (bins, bins, bins).
+    """
+    counts = np.zeros((bins, bins, bins), dtype=np.int32)
+    n = len(indices1)
+    for i in range(n):
+        idx1 = int(indices1[i])
+        idx2 = int(indices2[i])
+        idx3 = int(indices3[i])
+        if 0 <= idx1 < bins and 0 <= idx2 < bins and 0 <= idx3 < bins:
+            counts[idx1, idx2, idx3] += 1
+    return counts
+
+
+@njit(cache=True)
+def _count_joint_4d(indices1: np.ndarray, indices2: np.ndarray, indices3: np.ndarray, indices4: np.ndarray, bins: int) -> np.ndarray:
+    """Count joint 4D histogram using Numba JIT (fast path).
+
+    Args:
+        indices1: First dimension indices (clipped to [0, bins-1]).
+        indices2: Second dimension indices (clipped to [0, bins-1]).
+        indices3: Third dimension indices (clipped to [0, bins-1]).
+        indices4: Fourth dimension indices (clipped to [0, bins-1]).
+        bins: Number of bins.
+
+    Returns:
+        Joint count tensor (bins, bins, bins, bins).
+    """
+    counts = np.zeros((bins, bins, bins, bins), dtype=np.int32)
+    n = len(indices1)
+    for i in range(n):
+        idx1 = int(indices1[i])
+        idx2 = int(indices2[i])
+        idx3 = int(indices3[i])
+        idx4 = int(indices4[i])
+        if 0 <= idx1 < bins and 0 <= idx2 < bins and 0 <= idx3 < bins and 0 <= idx4 < bins:
+            counts[idx1, idx2, idx3, idx4] += 1
+    return counts
+
+
+@njit(cache=True, fastmath=True)
+def _compute_entropy_numba(probs: np.ndarray) -> float:
+    """Compute Shannon entropy from probability distribution (JIT-compiled).
+
+    Args:
+        probs: Probability array (flattened).
+
+    Returns:
+        Entropy in bits.
+    """
+    entropy = 0.0
+    for i in range(len(probs)):
+        if probs[i] > 0:
+            entropy -= probs[i] * np.log2(probs[i])
+    return entropy
+
 
 def conditional_transfer_entropy(
     x: np.ndarray,
@@ -77,52 +179,84 @@ def conditional_transfer_entropy(
     x_past = x_past[:min_len]
     z_past = z_past[:min_len]
 
-    # H(Y_t | Y_{t-lag}, Z_{t-lag}) - vectorized counting
+    # H(Y_t | Y_{t-lag}, Z_{t-lag}) - use JIT if available
     # Clip indices to valid range
     y_t_clipped = np.clip(y_t, 0, bins - 1)
     y_past_clipped = np.clip(y_past, 0, bins - 1)
     z_past_clipped = np.clip(z_past, 0, bins - 1)
 
-    # Use advanced indexing for counting (vectorized)
-    joint_counts_yz = np.zeros((bins, bins, bins), dtype=np.int32)
-    np.add.at(joint_counts_yz, (y_t_clipped, y_past_clipped, z_past_clipped), 1)
+    # Use JIT-compiled counting if available
+    if HAS_NUMBA and len(y_t) > 100:
+        try:
+            joint_counts_yz = _count_joint_3d(y_t_clipped, y_past_clipped, z_past_clipped, bins)
+            marginal_counts_yz = _count_joint_2d(y_past_clipped, z_past_clipped, bins)
+        except Exception:
+            # Fallback to vectorized counting
+            joint_counts_yz = np.zeros((bins, bins, bins), dtype=np.int32)
+            np.add.at(joint_counts_yz, (y_t_clipped, y_past_clipped, z_past_clipped), 1)
+            marginal_counts_yz = np.zeros((bins, bins), dtype=np.int32)
+            np.add.at(marginal_counts_yz, (y_past_clipped, z_past_clipped), 1)
+    else:
+        # Use advanced indexing for counting (vectorized)
+        joint_counts_yz = np.zeros((bins, bins, bins), dtype=np.int32)
+        np.add.at(joint_counts_yz, (y_t_clipped, y_past_clipped, z_past_clipped), 1)
+        marginal_counts_yz = np.zeros((bins, bins), dtype=np.int32)
+        np.add.at(marginal_counts_yz, (y_past_clipped, z_past_clipped), 1)
 
     total_yz = np.sum(joint_counts_yz)
     if total_yz == 0:
         return 0.0
 
     joint_probs_yz = joint_counts_yz / total_yz
-    joint_entropy_yz = -np.sum(joint_probs_yz[joint_probs_yz > 0] * np.log2(joint_probs_yz[joint_probs_yz > 0]))
-
-    # Marginal counts (vectorized)
-    marginal_counts_yz = np.zeros((bins, bins), dtype=np.int32)
-    np.add.at(marginal_counts_yz, (y_past_clipped, z_past_clipped), 1)
+    if HAS_NUMBA:
+        joint_entropy_yz = _compute_entropy_numba(joint_probs_yz.flatten())
+    else:
+        joint_entropy_yz = -np.sum(joint_probs_yz[joint_probs_yz > 0] * np.log2(joint_probs_yz[joint_probs_yz > 0]))
 
     marginal_probs_yz = marginal_counts_yz / (np.sum(marginal_counts_yz) + 1e-10)
-    marginal_entropy_yz = -np.sum(marginal_probs_yz[marginal_probs_yz > 0] * np.log2(marginal_probs_yz[marginal_probs_yz > 0]))
+    if HAS_NUMBA:
+        marginal_entropy_yz = _compute_entropy_numba(marginal_probs_yz.flatten())
+    else:
+        marginal_entropy_yz = -np.sum(marginal_probs_yz[marginal_probs_yz > 0] * np.log2(marginal_probs_yz[marginal_probs_yz > 0]))
 
     h_y_given_yz = joint_entropy_yz - marginal_entropy_yz
 
-    # H(Y_t | Y_{t-lag}, X_{t-lag}, Z_{t-lag}) - vectorized counting
+    # H(Y_t | Y_{t-lag}, X_{t-lag}, Z_{t-lag}) - use JIT if available
     x_past_clipped = np.clip(x_past, 0, bins - 1)
 
-    # Use advanced indexing for counting (vectorized)
-    joint_counts_4d = np.zeros((bins, bins, bins, bins), dtype=np.int32)
-    np.add.at(joint_counts_4d, (y_t_clipped, y_past_clipped, x_past_clipped, z_past_clipped), 1)
+    # Use JIT-compiled counting if available
+    if HAS_NUMBA and len(y_t) > 100:
+        try:
+            joint_counts_4d = _count_joint_4d(y_t_clipped, y_past_clipped, x_past_clipped, z_past_clipped, bins)
+            marginal_counts_xyz = _count_joint_3d(y_past_clipped, x_past_clipped, z_past_clipped, bins)
+        except Exception:
+            # Fallback to vectorized counting
+            joint_counts_4d = np.zeros((bins, bins, bins, bins), dtype=np.int32)
+            np.add.at(joint_counts_4d, (y_t_clipped, y_past_clipped, x_past_clipped, z_past_clipped), 1)
+            marginal_counts_xyz = np.zeros((bins, bins, bins), dtype=np.int32)
+            np.add.at(marginal_counts_xyz, (y_past_clipped, x_past_clipped, z_past_clipped), 1)
+    else:
+        # Use advanced indexing for counting (vectorized)
+        joint_counts_4d = np.zeros((bins, bins, bins, bins), dtype=np.int32)
+        np.add.at(joint_counts_4d, (y_t_clipped, y_past_clipped, x_past_clipped, z_past_clipped), 1)
+        marginal_counts_xyz = np.zeros((bins, bins, bins), dtype=np.int32)
+        np.add.at(marginal_counts_xyz, (y_past_clipped, x_past_clipped, z_past_clipped), 1)
 
     total_4d = np.sum(joint_counts_4d)
     if total_4d == 0:
         return 0.0
 
     joint_probs_4d = joint_counts_4d / total_4d
-    joint_entropy_4d = -np.sum(joint_probs_4d[joint_probs_4d > 0] * np.log2(joint_probs_4d[joint_probs_4d > 0]))
-
-    # Marginal counts (vectorized)
-    marginal_counts_xyz = np.zeros((bins, bins, bins), dtype=np.int32)
-    np.add.at(marginal_counts_xyz, (y_past_clipped, x_past_clipped, z_past_clipped), 1)
+    if HAS_NUMBA:
+        joint_entropy_4d = _compute_entropy_numba(joint_probs_4d.flatten())
+    else:
+        joint_entropy_4d = -np.sum(joint_probs_4d[joint_probs_4d > 0] * np.log2(joint_probs_4d[joint_probs_4d > 0]))
 
     marginal_probs_xyz = marginal_counts_xyz / (np.sum(marginal_counts_xyz) + 1e-10)
-    marginal_entropy_xyz = -np.sum(marginal_probs_xyz[marginal_probs_xyz > 0] * np.log2(marginal_probs_xyz[marginal_probs_xyz > 0]))
+    if HAS_NUMBA:
+        marginal_entropy_xyz = _compute_entropy_numba(marginal_probs_xyz.flatten())
+    else:
+        marginal_entropy_xyz = -np.sum(marginal_probs_xyz[marginal_probs_xyz > 0] * np.log2(marginal_probs_xyz[marginal_probs_xyz > 0]))
 
     h_y_given_xyz = joint_entropy_4d - marginal_entropy_xyz
 
@@ -252,51 +386,82 @@ def transfer_entropy(
     y_t = y_disc[lag:]
     y_past = y_disc[: n - lag]
 
-    # H(Y_t | Y_{t-lag}) - vectorized counting
+    # H(Y_t | Y_{t-lag}) - use JIT if available
     y_t_clipped = np.clip(y_t, 0, bins - 1)
     y_past_clipped = np.clip(y_past, 0, bins - 1)
 
-    # Use advanced indexing for counting (vectorized)
-    joint_counts = np.zeros((bins, bins), dtype=np.int32)
-    np.add.at(joint_counts, (y_t_clipped, y_past_clipped), 1)
+    # Use JIT-compiled counting if available
+    if HAS_NUMBA and len(y_t) > 100:
+        try:
+            joint_counts = _count_joint_2d(y_t_clipped, y_past_clipped, bins)
+        except Exception:
+            # Fallback to vectorized counting
+            joint_counts = np.zeros((bins, bins), dtype=np.int32)
+            np.add.at(joint_counts, (y_t_clipped, y_past_clipped), 1)
+    else:
+        # Use advanced indexing for counting (vectorized)
+        joint_counts = np.zeros((bins, bins), dtype=np.int32)
+        np.add.at(joint_counts, (y_t_clipped, y_past_clipped), 1)
 
     total = np.sum(joint_counts)
     if total == 0:
         return 0.0
 
     joint_probs = joint_counts / total
-    joint_entropy = -np.sum(joint_probs[joint_probs > 0] * np.log2(joint_probs[joint_probs > 0]))
+    if HAS_NUMBA:
+        joint_entropy = _compute_entropy_numba(joint_probs.flatten())
+    else:
+        joint_entropy = -np.sum(joint_probs[joint_probs > 0] * np.log2(joint_probs[joint_probs > 0]))
 
     # Marginal counts (vectorized using bincount)
     y_past_counts = np.bincount(y_past_clipped, minlength=bins)
     y_past_probs = y_past_counts / (np.sum(y_past_counts) + 1e-10)
-    y_past_entropy = -np.sum(y_past_probs[y_past_probs > 0] * np.log2(y_past_probs[y_past_probs > 0]))
+    if HAS_NUMBA:
+        y_past_entropy = _compute_entropy_numba(y_past_probs)
+    else:
+        y_past_entropy = -np.sum(y_past_probs[y_past_probs > 0] * np.log2(y_past_probs[y_past_probs > 0]))
 
     h_y_given_y_past = joint_entropy - y_past_entropy
 
-    # H(Y_t | Y_{t-lag}, X_{t-lag}) - vectorized counting
+    # H(Y_t | Y_{t-lag}, X_{t-lag}) - use JIT if available
     x_past = x_disc[: n - lag]
     x_past_clipped = np.clip(x_past, 0, bins - 1)
 
-    # Use advanced indexing for counting (vectorized)
-    joint_counts_3d = np.zeros((bins, bins, bins), dtype=np.int32)
-    np.add.at(joint_counts_3d, (y_t_clipped, y_past_clipped, x_past_clipped), 1)
+    # Use JIT-compiled counting if available
+    if HAS_NUMBA and len(y_t) > 100:
+        try:
+            joint_counts_3d = _count_joint_3d(y_t_clipped, y_past_clipped, x_past_clipped, bins)
+            marginal_counts = _count_joint_2d(y_past_clipped, x_past_clipped, bins)
+        except Exception:
+            # Fallback to vectorized counting
+            joint_counts_3d = np.zeros((bins, bins, bins), dtype=np.int32)
+            np.add.at(joint_counts_3d, (y_t_clipped, y_past_clipped, x_past_clipped), 1)
+            marginal_counts = np.zeros((bins, bins), dtype=np.int32)
+            np.add.at(marginal_counts, (y_past_clipped, x_past_clipped), 1)
+    else:
+        # Use advanced indexing for counting (vectorized)
+        joint_counts_3d = np.zeros((bins, bins, bins), dtype=np.int32)
+        np.add.at(joint_counts_3d, (y_t_clipped, y_past_clipped, x_past_clipped), 1)
+        marginal_counts = np.zeros((bins, bins), dtype=np.int32)
+        np.add.at(marginal_counts, (y_past_clipped, x_past_clipped), 1)
 
     total_3d = np.sum(joint_counts_3d)
     if total_3d == 0:
         return 0.0
 
     joint_probs_3d = joint_counts_3d / total_3d
-    joint_entropy_3d = -np.sum(
-        joint_probs_3d[joint_probs_3d > 0] * np.log2(joint_probs_3d[joint_probs_3d > 0])
-    )
-
-    # Marginal counts (vectorized)
-    marginal_counts = np.zeros((bins, bins), dtype=np.int32)
-    np.add.at(marginal_counts, (y_past_clipped, x_past_clipped), 1)
+    if HAS_NUMBA:
+        joint_entropy_3d = _compute_entropy_numba(joint_probs_3d.flatten())
+    else:
+        joint_entropy_3d = -np.sum(
+            joint_probs_3d[joint_probs_3d > 0] * np.log2(joint_probs_3d[joint_probs_3d > 0])
+        )
 
     marginal_probs = marginal_counts / (np.sum(marginal_counts) + 1e-10)
-    marginal_entropy = -np.sum(marginal_probs[marginal_probs > 0] * np.log2(marginal_probs[marginal_probs > 0]))
+    if HAS_NUMBA:
+        marginal_entropy = _compute_entropy_numba(marginal_probs.flatten())
+    else:
+        marginal_entropy = -np.sum(marginal_probs[marginal_probs > 0] * np.log2(marginal_probs[marginal_probs > 0]))
 
     h_y_given_y_past_x_past = joint_entropy_3d - marginal_entropy
 
