@@ -1,0 +1,104 @@
+"""Metrics for evaluating forecasts."""
+
+import logging
+from typing import Any
+
+import numpy as np
+import pandas as pd
+
+logger = logging.getLogger(__name__)
+
+
+def mae(y_true: Any, y_pred: Any) -> float:
+    """Mean Absolute Error.
+
+    Args:
+        y_true: True values.
+        y_pred: Predicted values.
+
+    Returns:
+        Mean absolute error.
+    """
+    y_true = _to_array(y_true)
+    y_pred = _to_array(y_pred)
+
+    if len(y_true) != len(y_pred):
+        raise ValueError(
+            f"y_true and y_pred must have same length. "
+            f"Got {len(y_true)} and {len(y_pred)}"
+        )
+
+    return float(np.mean(np.abs(y_true - y_pred)))
+
+
+def rmse(y_true: Any, y_pred: Any) -> float:
+    """Root Mean Squared Error.
+
+    Args:
+        y_true: True values.
+        y_pred: Predicted values.
+
+    Returns:
+        Root mean squared error.
+    """
+    y_true = _to_array(y_true)
+    y_pred = _to_array(y_pred)
+
+    if len(y_true) != len(y_pred):
+        raise ValueError(
+            f"y_true and y_pred must have same length. "
+            f"Got {len(y_true)} and {len(y_pred)}"
+        )
+
+    return float(np.sqrt(np.mean((y_true - y_pred) ** 2)))
+
+
+def mape(y_true: Any, y_pred: Any) -> float:
+    """Mean Absolute Percentage Error with safe zero handling.
+
+    Args:
+        y_true: True values.
+        y_pred: Predicted values.
+
+    Returns:
+        Mean absolute percentage error. Returns NaN if all true values are zero.
+    """
+    y_true = _to_array(y_true)
+    y_pred = _to_array(y_pred)
+
+    if len(y_true) != len(y_pred):
+        raise ValueError(
+            f"y_true and y_pred must have same length. "
+            f"Got {len(y_true)} and {len(y_pred)}"
+        )
+
+    # Handle zeros: only compute MAPE where y_true != 0
+    mask = y_true != 0
+    if not np.any(mask):
+        return float(np.nan)
+
+    percentage_errors = np.abs((y_true[mask] - y_pred[mask]) / y_true[mask]) * 100
+    return float(np.mean(percentage_errors))
+
+
+def _to_array(data: Any) -> np.ndarray:
+    """Convert data to numpy array.
+
+    Args:
+        data: Data to convert (Series, DataFrame, array, etc.).
+
+    Returns:
+        Numpy array.
+    """
+    if isinstance(data, pd.Series):
+        return data.values
+    elif isinstance(data, pd.DataFrame):
+        if data.shape[1] == 1:
+            return data.iloc[:, 0].values
+        else:
+            raise ValueError("DataFrame must have single column for metrics")
+    elif isinstance(data, np.ndarray):
+        return data
+    else:
+        return np.array(data)
+
