@@ -1,7 +1,7 @@
 """Bootstrap confidence intervals for time series forecasts."""
 
 import logging
-from typing import Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple
 
 import numpy as np
 import pandas as pd
