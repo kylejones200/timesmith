@@ -219,6 +219,9 @@ __all__ = [
     "remove_outliers_iqr",
     "monte_carlo_simulation",
     "plot_monte_carlo",
+    "autocorrelation",
+    "partial_autocorrelation",
+    "autocorrelation_plot_data",
     # Featurizers
     "LagFeaturizer",
     "RollingFeaturizer",
