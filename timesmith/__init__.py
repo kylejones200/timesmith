@@ -93,6 +93,22 @@ try:
 except ImportError:
     HAS_STATIONARITY = False
 
+# Optional plotting utilities (requires plotsmith)
+HAS_PLOTTING = False
+try:
+    from timesmith.utils.plotting import (
+        plot_timeseries,
+        plot_forecast,
+        plot_residuals,
+        plot_multiple_series,
+        plot_autocorrelation,
+        plot_monte_carlo_paths,
+        HAS_PLOTSMITH,
+    )
+    HAS_PLOTTING = HAS_PLOTSMITH
+except ImportError:
+    pass
+
 # Climatology utilities
 from timesmith.utils.climatology import (
     compute_climatology,
