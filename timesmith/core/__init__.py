@@ -44,6 +44,7 @@ try:
     from timesmith.core.changepoint import (
         PELTDetector,
         BayesianChangePointDetector,
+        CUSUMDetector,
         preprocess_for_changepoint,
     )
     HAS_CHANGEPOINT = True
@@ -59,6 +60,17 @@ try:
     HAS_FILTERS = True
 except ImportError:
     HAS_FILTERS = False
+
+# Advanced outlier detection (optional sklearn for IsolationForest)
+try:
+    from timesmith.core.outliers import (
+        HampelOutlierRemover,
+        IsolationForestOutlierRemover,
+        ZScoreOutlierRemover,
+    )
+    HAS_ADVANCED_OUTLIERS = True
+except ImportError:
+    HAS_ADVANCED_OUTLIERS = False
 
 __all__ = [
     "BaseObject",
@@ -95,6 +107,7 @@ if HAS_CHANGEPOINT:
     __all__.extend([
         "PELTDetector",
         "BayesianChangePointDetector",
+        "CUSUMDetector",
         "preprocess_for_changepoint",
     ])
 
@@ -103,5 +116,13 @@ if HAS_FILTERS:
     __all__.extend([
         "ButterworthFilter",
         "SavitzkyGolayFilter",
+    ])
+
+# Conditionally add advanced outlier detection exports
+if HAS_ADVANCED_OUTLIERS:
+    __all__.extend([
+        "HampelOutlierRemover",
+        "IsolationForestOutlierRemover",
+        "ZScoreOutlierRemover",
     ])
 

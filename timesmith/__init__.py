@@ -118,6 +118,7 @@ from timesmith.core import (
     OutlierRemover,
     PELTDetector,
     BayesianChangePointDetector,
+    CUSUMDetector,
     Resampler,
     RollingFeaturizer,
     TimeFeaturizer,

@@ -1,6 +1,7 @@
 """Utility functions for time series operations."""
 
 from timesmith.utils.ts_utils import (
+    detect_anomalies_mad,
     detect_frequency,
     ensure_datetime_index,
     fill_missing_dates,
@@ -59,6 +60,7 @@ __all__ = [
     "detect_frequency",
     "fill_missing_dates",
     "remove_outliers_iqr",
+    "detect_anomalies_mad",
     # Monte Carlo
     "monte_carlo_simulation",
     "plot_monte_carlo",

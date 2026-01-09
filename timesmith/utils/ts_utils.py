@@ -207,3 +207,43 @@ def remove_outliers_iqr(data: pd.Series, factor: float = 1.5) -> pd.Series:
 
     return data[(data >= lower_bound) & (data <= upper_bound)]
 
+
+def detect_anomalies_mad(
+    series: pd.Series, threshold_std: float = 3.0, window: int = 3
+) -> pd.Series:
+    """Detect anomalous values using median absolute deviation (MAD).
+
+    Flags values that are more than threshold_std MAD from the rolling median.
+    Uses MAD instead of std for robustness to outliers.
+
+    Args:
+        series: Time series data.
+        threshold_std: Number of MAD units for threshold (roughly equivalent to std).
+        window: Window size for rolling median.
+
+    Returns:
+        Boolean series indicating anomalies.
+
+    Example:
+        >>> anomalies = detect_anomalies_mad(oil_series, threshold_std=3.0)
+        >>> print(f"Found {anomalies.sum()} anomalies")
+    """
+    import numpy as np
+
+    # Use rolling median and MAD (center=False to avoid future data leakage)
+    rolling_median = series.rolling(window=window, center=False).median()
+
+    # Calculate MAD (Median Absolute Deviation)
+    mad = series.rolling(window=window, center=False).apply(
+        lambda x: np.median(np.abs(x - np.median(x))), raw=True
+    )
+
+    # Avoid division by zero
+    mad = mad.replace(0, 1e-10)
+
+    # Modified z-score using MAD (factor of 0.6745 makes it consistent with std)
+    modified_z_score = 0.6745 * np.abs((series - rolling_median) / mad)
+    anomalies = modified_z_score > threshold_std
+
+    return anomalies.fillna(False)
+

@@ -154,6 +154,72 @@ def ubrmse(y_true: Any, y_pred: Any) -> float:
     return float(np.sqrt(np.mean((y_true - y_pred_unbiased) ** 2)))
 
 
+def smape(y_true: Any, y_pred: Any) -> float:
+    """Symmetric Mean Absolute Percentage Error.
+
+    SMAPE is symmetric and handles zero values better than MAPE.
+
+    Args:
+        y_true: True values.
+        y_pred: Predicted values.
+
+    Returns:
+        SMAPE value (percentage).
+    """
+    y_true = _to_array(y_true)
+    y_pred = _to_array(y_pred)
+
+    if len(y_true) != len(y_pred):
+        raise ValueError(
+            f"y_true and y_pred must have same length. "
+            f"Got {len(y_true)} and {len(y_pred)}"
+        )
+
+    numerator = np.abs(y_pred - y_true)
+    denominator = (np.abs(y_true) + np.abs(y_pred)) / 2
+
+    # Handle division by zero
+    mask = denominator > 0
+    if not np.any(mask):
+        return float(np.nan)
+
+    return float(np.mean(numerator[mask] / denominator[mask]) * 100)
+
+
+def r2_score(y_true: Any, y_pred: Any) -> float:
+    """R-squared coefficient of determination.
+
+    Args:
+        y_true: True values.
+        y_pred: Predicted values.
+
+    Returns:
+        R² score.
+    """
+    y_true = _to_array(y_true)
+    y_pred = _to_array(y_pred)
+
+    if len(y_true) != len(y_pred):
+        raise ValueError(
+            f"y_true and y_pred must have same length. "
+            f"Got {len(y_true)} and {len(y_pred)}"
+        )
+
+    ss_res = np.sum((y_true - y_pred) ** 2)
+    ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
+
+    # Handle constant values case where ss_tot = 0
+    if ss_tot == 0:
+        # If actual values are constant and predictions match, R² = 1
+        if ss_res == 0:
+            return 1.0
+        # If actual values are constant but predictions don't match, R² = 0
+        else:
+            return 0.0
+
+    return float(1 - (ss_res / ss_tot))
+
+
 def _to_array(data: Any) -> np.ndarray:
     """Convert data to numpy array.
 
