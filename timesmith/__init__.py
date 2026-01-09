@@ -60,6 +60,8 @@ from timesmith.results import BacktestResult, Forecast
 
 # Utils
 from timesmith.utils import (
+    autocorrelation,
+    autocorrelation_plot_data,
     correlation_distance,
     create_sequences,
     create_sequences_with_exog,
@@ -72,6 +74,7 @@ from timesmith.utils import (
     load_ts_data,
     manhattan_distance,
     monte_carlo_simulation,
+    partial_autocorrelation,
     plot_monte_carlo,
     remove_outliers_iqr,
     resample_ts,

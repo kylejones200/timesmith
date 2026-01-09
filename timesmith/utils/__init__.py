@@ -57,6 +57,13 @@ from timesmith.utils.sequences import (
     create_sequences_with_exog,
 )
 
+# Autocorrelation utilities (always available)
+from timesmith.utils.autocorrelation import (
+    autocorrelation,
+    autocorrelation_plot_data,
+    partial_autocorrelation,
+)
+
 __all__ = [
     # Time series utilities
     "load_ts_data",
@@ -93,5 +100,12 @@ __all__.extend([
 __all__.extend([
     "create_sequences",
     "create_sequences_with_exog",
+])
+
+# Autocorrelation utilities
+__all__.extend([
+    "autocorrelation",
+    "partial_autocorrelation",
+    "autocorrelation_plot_data",
 ])
 
