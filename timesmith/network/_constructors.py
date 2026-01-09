@@ -154,27 +154,25 @@ def build_recurrence_network(
 
     # Create phase space vectors
     if embedding_dimension > 1:
-        # Time-delay embedding
-        vectors = []
+        # Time-delay embedding (vectorized)
         max_idx = n - (embedding_dimension - 1) * time_delay
-        for i in range(max_idx):
-            vec = [series[i + j * time_delay] for j in range(embedding_dimension)]
-            vectors.append(vec)
-        vectors = np.array(vectors)
+        indices = np.arange(max_idx)[:, None] + np.arange(embedding_dimension) * time_delay
+        vectors = series[indices]
     else:
         vectors = series.reshape(-1, 1)
 
-    # Compute distance matrix
-    if metric == "euclidean":
-        from scipy.spatial.distance import pdist, squareform
+    # Compute distance matrix (import at top level would be better, but scipy is optional)
+    from scipy.spatial.distance import pdist, squareform
 
-        distances = squareform(pdist(vectors, metric="euclidean"))
-    elif metric == "manhattan":
-        from scipy.spatial.distance import pdist, squareform
+    metric_map = {
+        "euclidean": "euclidean",
+        "manhattan": "cityblock",
+    }
+    scipy_metric = metric_map.get(metric)
+    if scipy_metric is None:
+        raise ValueError(f"Unsupported metric: {metric}. Must be one of {list(metric_map.keys())}")
 
-        distances = squareform(pdist(vectors, metric="cityblock"))
-    else:
-        raise ValueError(f"Unsupported metric: {metric}")
+    distances = squareform(pdist(vectors, metric=scipy_metric))
 
     # Determine threshold
     if rule == "knn" or (rule is None and k is not None):
@@ -186,20 +184,22 @@ def build_recurrence_network(
         # Default: use 10th percentile of distances
         threshold = np.percentile(distances[distances > 0], 10)
 
-    # Build graph
+    # Build graph (vectorized edge creation)
     G = nx.Graph()
     G.add_nodes_from(range(len(vectors)))
 
-    for i in range(len(vectors)):
-        for j in range(i + 1, len(vectors)):
-            if rule == "knn":
-                # For k-NN, use per-node threshold
-                if distances[i, j] <= threshold[i] or distances[i, j] <= threshold[j]:
-                    G.add_edge(i, j)
-            else:
-                # Epsilon rule
-                if distances[i, j] <= threshold:
-                    G.add_edge(i, j)
+    if rule == "knn":
+        # For k-NN, use per-node threshold (vectorized)
+        # Create mask: edge exists if distance <= threshold[i] OR distance <= threshold[j]
+        threshold_matrix = np.minimum(threshold[:, None], threshold[None, :])
+        mask = (distances <= threshold_matrix) & (np.triu(np.ones_like(distances, dtype=bool), k=1))
+    else:
+        # Epsilon rule (vectorized)
+        mask = (distances <= threshold) & (np.triu(np.ones_like(distances, dtype=bool), k=1))
+
+    # Add edges from mask
+    edges = np.argwhere(mask)
+    G.add_edges_from(edges)
 
     return G
 
@@ -228,32 +228,39 @@ def build_transition_network(
 
     # Symbolize time series
     if symbolizer == "ordinal":
-        # Ordinal pattern encoding
-        symbols = []
-        for i in range(n - order + 1):
-            subseq = series[i : i + order]
-            pattern = tuple(np.argsort(subseq))
-            symbols.append(pattern)
-        unique_patterns = list(set(symbols))
+        # Ordinal pattern encoding (vectorized)
+        n_patterns = n - order + 1
+        if n_patterns <= 0:
+            raise ValueError(f"Series too short for order {order}")
+        # Create sliding window view
+        indices = np.arange(n_patterns)[:, None] + np.arange(order)
+        patterns = np.argsort(series[indices], axis=1)
+        # Convert to tuples for hashing
+        pattern_tuples = [tuple(p) for p in patterns]
+        unique_patterns = list(dict.fromkeys(pattern_tuples))  # Preserves order
         pattern_to_idx = {pattern: idx for idx, pattern in enumerate(unique_patterns)}
-        symbol_series = np.array([pattern_to_idx[pattern] for pattern in symbols])
+        symbol_series = np.array([pattern_to_idx[pattern] for pattern in pattern_tuples])
     else:
         # Equal-width binning
         bins = np.linspace(series.min(), series.max(), n_bins + 1)[1:-1]
         symbol_series = np.digitize(series, bins)
 
     # Build transition network
+    n_states = len(np.unique(symbol_series))
     G = nx.DiGraph()
-    G.add_nodes_from(range(len(np.unique(symbol_series))))
+    G.add_nodes_from(range(n_states))
 
-    # Count transitions
-    for i in range(len(symbol_series) - order):
-        from_state = symbol_series[i]
-        to_state = symbol_series[i + order]
-        if G.has_edge(from_state, to_state):
-            G[from_state][to_state]["weight"] += 1
-        else:
-            G.add_edge(from_state, to_state, weight=1)
+    # Count transitions (vectorized)
+    if len(symbol_series) > order:
+        from_states = symbol_series[:-order]
+        to_states = symbol_series[order:]
+        # Use Counter-like approach with unique pairs
+        transitions = np.column_stack([from_states, to_states])
+        # Count unique transitions
+        unique_transitions, counts = np.unique(transitions, axis=0, return_counts=True)
+        # Add edges with weights
+        for (from_state, to_state), count in zip(unique_transitions, counts):
+            G.add_edge(int(from_state), int(to_state), weight=int(count))
 
     return G
 

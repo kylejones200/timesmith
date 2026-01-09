@@ -123,40 +123,45 @@ class MultiscaleGraphs:
                     self.scale_stats_[scale] = None
                     continue
 
-                # Build graph at this scale
-                if self.method == "hvg":
-                    G_nx, A = build_hvg(
-                        x_coarse,
+                # Build graph at this scale (using dispatch dictionary)
+                method_builders = {
+                    "hvg": lambda x: build_hvg(
+                        x,
                         weighted=self.method_kwargs.get('weighted', False),
                         limit=self.method_kwargs.get('limit'),
                         directed=self.method_kwargs.get('directed', False),
-                    )
-                elif self.method == "nvg":
-                    G_nx, A = build_nvg(
-                        x_coarse,
+                    ),
+                    "nvg": lambda x: build_nvg(
+                        x,
                         weighted=self.method_kwargs.get('weighted', False),
                         limit=self.method_kwargs.get('limit'),
                         directed=self.method_kwargs.get('directed', False),
-                    )
-                elif self.method == "recurrence":
-                    G_nx = build_recurrence_network(
-                        x_coarse,
+                    ),
+                    "recurrence": lambda x: build_recurrence_network(
+                        x,
                         threshold=self.method_kwargs.get('threshold'),
                         embedding_dimension=self.method_kwargs.get('embedding_dimension'),
                         time_delay=self.method_kwargs.get('time_delay', 1),
                         metric=self.method_kwargs.get('metric', 'euclidean'),
                         rule=self.method_kwargs.get('rule'),
                         k=self.method_kwargs.get('k'),
-                    )
-                elif self.method == "transition":
-                    G_nx = build_transition_network(
-                        x_coarse,
+                    ),
+                    "transition": lambda x: build_transition_network(
+                        x,
                         n_bins=self.method_kwargs.get('n_bins', 10),
                         order=self.method_kwargs.get('order', 1),
                         symbolizer=self.method_kwargs.get('symbolizer'),
-                    )
-                else:
-                    raise ValueError(f"Unknown method: {self.method}")
+                    ),
+                }
+
+                builder = method_builders.get(self.method)
+                if builder is None:
+                    raise ValueError(f"Unknown method: {self.method}. Must be one of {list(method_builders.keys())}")
+
+                G_nx = builder(x_coarse)
+                # Handle methods that return (graph, matrix) vs just graph
+                if isinstance(G_nx, tuple):
+                    G_nx, A = G_nx
 
                 # Convert to Graph object and get stats
                 edges = list(G_nx.edges())
@@ -193,17 +198,14 @@ class MultiscaleGraphs:
         if features is None:
             features = ['n_nodes', 'n_edges', 'avg_degree', 'std_degree', 'density']
 
-        signature = {}
-
-        for feature in features:
-            values = []
-            for scale in self.scales:
-                stats = self.scale_stats_.get(scale)
-                if stats is None:
-                    values.append(np.nan)
-                else:
-                    values.append(stats.get(feature, np.nan))
-            signature[feature] = np.array(values, dtype=np.float64)
+        # Vectorized feature extraction
+        signature = {
+            feature: np.array([
+                self.scale_stats_.get(scale, {}).get(feature, np.nan)
+                for scale in self.scales
+            ], dtype=np.float64)
+            for feature in features
+        }
 
         return signature
 

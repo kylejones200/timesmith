@@ -77,11 +77,15 @@ def conditional_transfer_entropy(
     x_past = x_past[:min_len]
     z_past = z_past[:min_len]
 
-    # H(Y_t | Y_{t-lag}, Z_{t-lag})
+    # H(Y_t | Y_{t-lag}, Z_{t-lag}) - vectorized counting
+    # Clip indices to valid range
+    y_t_clipped = np.clip(y_t, 0, bins - 1)
+    y_past_clipped = np.clip(y_past, 0, bins - 1)
+    z_past_clipped = np.clip(z_past, 0, bins - 1)
+
+    # Use advanced indexing for counting (vectorized)
     joint_counts_yz = np.zeros((bins, bins, bins), dtype=np.int32)
-    for i in range(len(y_t)):
-        if (0 <= y_t[i] < bins and 0 <= y_past[i] < bins and 0 <= z_past[i] < bins):
-            joint_counts_yz[y_t[i], y_past[i], z_past[i]] += 1
+    np.add.at(joint_counts_yz, (y_t_clipped, y_past_clipped, z_past_clipped), 1)
 
     total_yz = np.sum(joint_counts_yz)
     if total_yz == 0:
@@ -90,22 +94,21 @@ def conditional_transfer_entropy(
     joint_probs_yz = joint_counts_yz / total_yz
     joint_entropy_yz = -np.sum(joint_probs_yz[joint_probs_yz > 0] * np.log2(joint_probs_yz[joint_probs_yz > 0]))
 
+    # Marginal counts (vectorized)
     marginal_counts_yz = np.zeros((bins, bins), dtype=np.int32)
-    for i in range(len(y_past)):
-        if 0 <= y_past[i] < bins and 0 <= z_past[i] < bins:
-            marginal_counts_yz[y_past[i], z_past[i]] += 1
+    np.add.at(marginal_counts_yz, (y_past_clipped, z_past_clipped), 1)
 
     marginal_probs_yz = marginal_counts_yz / (np.sum(marginal_counts_yz) + 1e-10)
     marginal_entropy_yz = -np.sum(marginal_probs_yz[marginal_probs_yz > 0] * np.log2(marginal_probs_yz[marginal_probs_yz > 0]))
 
     h_y_given_yz = joint_entropy_yz - marginal_entropy_yz
 
-    # H(Y_t | Y_{t-lag}, X_{t-lag}, Z_{t-lag})
+    # H(Y_t | Y_{t-lag}, X_{t-lag}, Z_{t-lag}) - vectorized counting
+    x_past_clipped = np.clip(x_past, 0, bins - 1)
+
+    # Use advanced indexing for counting (vectorized)
     joint_counts_4d = np.zeros((bins, bins, bins, bins), dtype=np.int32)
-    for i in range(len(y_t)):
-        if (0 <= y_t[i] < bins and 0 <= y_past[i] < bins and
-            0 <= x_past[i] < bins and 0 <= z_past[i] < bins):
-            joint_counts_4d[y_t[i], y_past[i], x_past[i], z_past[i]] += 1
+    np.add.at(joint_counts_4d, (y_t_clipped, y_past_clipped, x_past_clipped, z_past_clipped), 1)
 
     total_4d = np.sum(joint_counts_4d)
     if total_4d == 0:
@@ -114,10 +117,9 @@ def conditional_transfer_entropy(
     joint_probs_4d = joint_counts_4d / total_4d
     joint_entropy_4d = -np.sum(joint_probs_4d[joint_probs_4d > 0] * np.log2(joint_probs_4d[joint_probs_4d > 0]))
 
+    # Marginal counts (vectorized)
     marginal_counts_xyz = np.zeros((bins, bins, bins), dtype=np.int32)
-    for i in range(len(y_past)):
-        if (0 <= y_past[i] < bins and 0 <= x_past[i] < bins and 0 <= z_past[i] < bins):
-            marginal_counts_xyz[y_past[i], x_past[i], z_past[i]] += 1
+    np.add.at(marginal_counts_xyz, (y_past_clipped, x_past_clipped, z_past_clipped), 1)
 
     marginal_probs_xyz = marginal_counts_xyz / (np.sum(marginal_counts_xyz) + 1e-10)
     marginal_entropy_xyz = -np.sum(marginal_probs_xyz[marginal_probs_xyz > 0] * np.log2(marginal_probs_xyz[marginal_probs_xyz > 0]))
@@ -250,11 +252,13 @@ def transfer_entropy(
     y_t = y_disc[lag:]
     y_past = y_disc[: n - lag]
 
-    # H(Y_t | Y_{t-lag})
+    # H(Y_t | Y_{t-lag}) - vectorized counting
+    y_t_clipped = np.clip(y_t, 0, bins - 1)
+    y_past_clipped = np.clip(y_past, 0, bins - 1)
+
+    # Use advanced indexing for counting (vectorized)
     joint_counts = np.zeros((bins, bins), dtype=np.int32)
-    for i in range(len(y_t)):
-        if 0 <= y_t[i] < bins and 0 <= y_past[i] < bins:
-            joint_counts[y_t[i], y_past[i]] += 1
+    np.add.at(joint_counts, (y_t_clipped, y_past_clipped), 1)
 
     total = np.sum(joint_counts)
     if total == 0:
@@ -263,22 +267,20 @@ def transfer_entropy(
     joint_probs = joint_counts / total
     joint_entropy = -np.sum(joint_probs[joint_probs > 0] * np.log2(joint_probs[joint_probs > 0]))
 
-    y_past_counts = np.bincount(y_past[y_past >= 0], minlength=bins)
+    # Marginal counts (vectorized using bincount)
+    y_past_counts = np.bincount(y_past_clipped, minlength=bins)
     y_past_probs = y_past_counts / (np.sum(y_past_counts) + 1e-10)
     y_past_entropy = -np.sum(y_past_probs[y_past_probs > 0] * np.log2(y_past_probs[y_past_probs > 0]))
 
     h_y_given_y_past = joint_entropy - y_past_entropy
 
-    # H(Y_t | Y_{t-lag}, X_{t-lag})
+    # H(Y_t | Y_{t-lag}, X_{t-lag}) - vectorized counting
     x_past = x_disc[: n - lag]
+    x_past_clipped = np.clip(x_past, 0, bins - 1)
+
+    # Use advanced indexing for counting (vectorized)
     joint_counts_3d = np.zeros((bins, bins, bins), dtype=np.int32)
-    for i in range(len(y_t)):
-        if (
-            0 <= y_t[i] < bins
-            and 0 <= y_past[i] < bins
-            and 0 <= x_past[i] < bins
-        ):
-            joint_counts_3d[y_t[i], y_past[i], x_past[i]] += 1
+    np.add.at(joint_counts_3d, (y_t_clipped, y_past_clipped, x_past_clipped), 1)
 
     total_3d = np.sum(joint_counts_3d)
     if total_3d == 0:
@@ -289,10 +291,9 @@ def transfer_entropy(
         joint_probs_3d[joint_probs_3d > 0] * np.log2(joint_probs_3d[joint_probs_3d > 0])
     )
 
+    # Marginal counts (vectorized)
     marginal_counts = np.zeros((bins, bins), dtype=np.int32)
-    for i in range(len(y_past)):
-        if 0 <= y_past[i] < bins and 0 <= x_past[i] < bins:
-            marginal_counts[y_past[i], x_past[i]] += 1
+    np.add.at(marginal_counts, (y_past_clipped, x_past_clipped), 1)
 
     marginal_probs = marginal_counts / (np.sum(marginal_counts) + 1e-10)
     marginal_entropy = -np.sum(marginal_probs[marginal_probs > 0] * np.log2(marginal_probs[marginal_probs > 0]))

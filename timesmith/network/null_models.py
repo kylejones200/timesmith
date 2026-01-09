@@ -111,12 +111,17 @@ def generate_surrogate(
         return surrogate
 
     elif method == "block_bootstrap":
-        # Block bootstrap (preserves local structure)
+        # Block bootstrap (preserves local structure) - vectorized
         block_size = kwargs.get('block_size', 10)
         n_blocks = (len(x) + block_size - 1) // block_size
-        blocks = [x[i * block_size:(i + 1) * block_size] for i in range(n_blocks)]
-        sampled_blocks = [blocks[i] for i in rng.integers(0, len(blocks), size=n_blocks)]
-        return np.concatenate(sampled_blocks)[:len(x)]
+        # Extract blocks using vectorized indexing
+        block_indices = np.arange(n_blocks)[:, None] * block_size + np.arange(block_size)
+        block_indices = np.clip(block_indices, 0, len(x) - 1)
+        blocks = x[block_indices]
+        # Sample blocks
+        sampled_indices = rng.integers(0, n_blocks, size=n_blocks)
+        sampled_blocks = blocks[sampled_indices]
+        return sampled_blocks.flatten()[:len(x)]
 
     else:
         raise ValueError(f"Unknown method: {method}")

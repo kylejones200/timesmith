@@ -116,20 +116,16 @@ def net_enn(
         distances_flat = D[np.triu_indices(n, k=1)]
         epsilon = np.percentile(distances_flat, percentile)
 
-    # Create adjacency matrix
-    A = np.zeros((n, n))
-
-    for i in range(n):
-        for j in range(n):
-            if i != j and D[i, j] <= epsilon:
-                weight = D[i, j] if weighted else 1.0
-                A[i, j] = weight
+    # Create adjacency matrix (vectorized)
+    # Create mask excluding diagonal
+    mask = (D <= epsilon) & ~np.eye(n, dtype=bool)
+    A = np.where(mask, D if weighted else 1.0, 0.0)
 
     # Make symmetric for undirected
     if not directed:
         A = (A + A.T) / 2
 
-    # Build NetworkX graph
+    # Build NetworkX graph (vectorized edge addition)
     if directed:
         G = nx.DiGraph()
     else:
@@ -137,13 +133,13 @@ def net_enn(
 
     G.add_nodes_from(range(n))
 
-    for i in range(n):
-        for j in range(n):
-            if A[i, j] > 0:
-                if weighted:
-                    G.add_edge(i, j, weight=float(A[i, j]))
-                else:
-                    G.add_edge(i, j)
+    # Find edges using vectorized operations
+    edges = np.argwhere(A > 0)
+    if weighted:
+        weights = A[A > 0]
+        G.add_weighted_edges_from(zip(edges[:, 0], edges[:, 1], weights))
+    else:
+        G.add_edges_from(edges)
 
     return G, A
 

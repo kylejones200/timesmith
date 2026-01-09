@@ -59,13 +59,10 @@ def ts_to_windows(x: np.ndarray, width: int, by: int = 1, start: int = 0, end: O
     if n_windows <= 0:
         raise ValueError(f"No windows possible with width={width}, by={by}, start={start}, end={end}")
 
-    # Extract windows
-    windows = np.zeros((n_windows, width))
-
-    for i in range(n_windows):
-        window_start = start + i * by
-        window_end = window_start + width
-        windows[i] = x[window_start:window_end]
+    # Extract windows (vectorized using advanced indexing)
+    window_starts = start + np.arange(n_windows) * by
+    indices = window_starts[:, None] + np.arange(width)
+    windows = x[indices]
 
     return windows
 
@@ -107,42 +104,48 @@ def build_windows(
         'density': np.zeros(n_windows, dtype=np.float64),
     }
 
+    # Dispatch dictionary for method selection (more Pythonic)
+    method_builders = {
+        "hvg": lambda w: build_hvg(
+            w,
+            weighted=method_kwargs.get('weighted', False),
+            limit=method_kwargs.get('limit'),
+            directed=method_kwargs.get('directed', False),
+        ),
+        "nvg": lambda w: build_nvg(
+            w,
+            weighted=method_kwargs.get('weighted', False),
+            limit=method_kwargs.get('limit'),
+            directed=method_kwargs.get('directed', False),
+        ),
+        "recurrence": lambda w: build_recurrence_network(
+            w,
+            threshold=method_kwargs.get('threshold'),
+            embedding_dimension=method_kwargs.get('embedding_dimension'),
+            time_delay=method_kwargs.get('time_delay', 1),
+            metric=method_kwargs.get('metric', 'euclidean'),
+            rule=method_kwargs.get('rule'),
+            k=method_kwargs.get('k'),
+        ),
+        "transition": lambda w: build_transition_network(
+            w,
+            n_bins=method_kwargs.get('n_bins', 10),
+            order=method_kwargs.get('order', 1),
+            symbolizer=method_kwargs.get('symbolizer'),
+        ),
+    }
+
+    builder = method_builders.get(method.lower())
+    if builder is None:
+        raise ValueError(f"Unknown method: {method}. Must be one of {list(method_builders.keys())}")
+
     # Build network for each window
     for i, window_data in enumerate(windows):
         try:
-            if method == "hvg":
-                G_nx, A = build_hvg(
-                    window_data,
-                    weighted=method_kwargs.get('weighted', False),
-                    limit=method_kwargs.get('limit'),
-                    directed=method_kwargs.get('directed', False),
-                )
-            elif method == "nvg":
-                G_nx, A = build_nvg(
-                    window_data,
-                    weighted=method_kwargs.get('weighted', False),
-                    limit=method_kwargs.get('limit'),
-                    directed=method_kwargs.get('directed', False),
-                )
-            elif method == "recurrence":
-                G_nx = build_recurrence_network(
-                    window_data,
-                    threshold=method_kwargs.get('threshold'),
-                    embedding_dimension=method_kwargs.get('embedding_dimension'),
-                    time_delay=method_kwargs.get('time_delay', 1),
-                    metric=method_kwargs.get('metric', 'euclidean'),
-                    rule=method_kwargs.get('rule'),
-                    k=method_kwargs.get('k'),
-                )
-            elif method == "transition":
-                G_nx = build_transition_network(
-                    window_data,
-                    n_bins=method_kwargs.get('n_bins', 10),
-                    order=method_kwargs.get('order', 1),
-                    symbolizer=method_kwargs.get('symbolizer'),
-                )
-            else:
-                raise ValueError(f"Unknown method: {method}")
+            G_nx = builder(window_data)
+            # Handle methods that return (graph, matrix) vs just graph
+            if isinstance(G_nx, tuple):
+                G_nx, A = G_nx
 
             # Convert to Graph object and get stats
             edges = list(G_nx.edges())

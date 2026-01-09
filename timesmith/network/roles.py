@@ -37,9 +37,12 @@ def node_roles(
     nodes = list(H.nodes())
 
     # Basic features: degree, clustering, pagerank, eigenvector centrality, core number, betweenness, closeness
+    # Use dict comprehensions and vectorized operations where possible
     deg = np.array([H.degree(n) for n in nodes], dtype=float)
-    cc = np.array(list(nx.clustering(H).values()), dtype=float)
-    pr = np.array(list(nx.pagerank(H).values()), dtype=float)
+    clustering_dict = nx.clustering(H)
+    cc = np.array([clustering_dict[n] for n in nodes], dtype=float)
+    pagerank_dict = nx.pagerank(H)
+    pr = np.array([pagerank_dict[n] for n in nodes], dtype=float)
 
     try:
         ev = nx.eigenvector_centrality_numpy(H)

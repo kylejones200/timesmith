@@ -28,12 +28,13 @@ def directed_3node_motifs(G: nx.DiGraph) -> Dict:
         mapping = dict(zip(sub.nodes(), range(3)))
         sub = nx.relabel_nodes(sub, mapping)
 
-        # Encode adjacency as bitstring of length 6 (excluding self-loops)
-        edges = []
-        for i in range(3):
-            for j in range(3):
-                if i != j:
-                    edges.append(1 if sub.has_edge(i, j) else 0)
+        # Encode adjacency as bitstring of length 6 (excluding self-loops) - vectorized
+        # Create adjacency matrix for 3 nodes
+        adj = np.zeros((3, 3), dtype=int)
+        for u, v in sub.edges():
+            adj[u, v] = 1
+        # Extract upper triangular (excluding diagonal) and flatten
+        edges = adj[np.triu_indices(3, k=1)]
         code = "".join(map(str, edges))
         motifs[code] = motifs.get(code, 0) + 1
 

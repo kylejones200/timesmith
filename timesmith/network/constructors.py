@@ -82,11 +82,13 @@ def _extract_network_features(graph: Graph, include_degrees: bool = True) -> pd.
     # Create DataFrame with single row
     df = pd.DataFrame([features])
 
-    # Optionally add degree sequence as columns
+    # Optionally add degree sequence as columns (vectorized to avoid fragmentation)
     if include_degrees and graph.n_nodes <= 1000:  # Only for small graphs
         degree_cols = {f"degree_{i}": int(degrees[i]) for i in range(len(degrees))}
-        for col, val in degree_cols.items():
-            df[col] = val
+        # Use pd.concat to avoid fragmentation warning
+        if degree_cols:
+            degree_df = pd.DataFrame([degree_cols])
+            df = pd.concat([df, degree_df], axis=1)
 
     return df
 
