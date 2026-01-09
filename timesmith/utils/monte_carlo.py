@@ -3,11 +3,18 @@
 import logging
 from typing import Optional
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
+
+# Optional matplotlib import
+try:
+    import matplotlib.pyplot as plt
+    HAS_MATPLOTLIB = True
+except ImportError:
+    HAS_MATPLOTLIB = False
+    plt = None
 
 
 def monte_carlo_simulation(
@@ -55,7 +62,16 @@ def plot_monte_carlo(
         prices: Array of simulated paths from monte_carlo_simulation.
         title: Plot title.
         save_path: Optional path to save the plot.
+
+    Raises:
+        ImportError: If matplotlib is not installed.
     """
+    if not HAS_MATPLOTLIB:
+        raise ImportError(
+            "matplotlib is required for plot_monte_carlo. "
+            "Install with: pip install matplotlib"
+        )
+
     plt.figure(figsize=(10, 5))
     plt.plot(prices, color="gray", alpha=0.3)
     plt.plot(prices.mean(axis=1), color="black", linewidth=2, label="Mean Path")

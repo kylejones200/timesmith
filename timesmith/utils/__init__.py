@@ -1,6 +1,5 @@
 """Utility functions for time series operations."""
 
-from timesmith.utils.monte_carlo import monte_carlo_simulation, plot_monte_carlo
 from timesmith.utils.ts_utils import (
     detect_frequency,
     ensure_datetime_index,
@@ -17,6 +16,25 @@ from timesmith.utils.distances import (
     euclidean_distance,
     manhattan_distance,
 )
+
+# Optional matplotlib-dependent imports
+try:
+    from timesmith.utils.monte_carlo import monte_carlo_simulation, plot_monte_carlo
+    HAS_MONTE_CARLO = True
+except ImportError:
+    HAS_MONTE_CARLO = False
+    # Define stubs to avoid import errors
+    def monte_carlo_simulation(*args, **kwargs):
+        raise ImportError(
+            "matplotlib is required for monte_carlo_simulation. "
+            "Install with: pip install matplotlib"
+        )
+
+    def plot_monte_carlo(*args, **kwargs):
+        raise ImportError(
+            "matplotlib is required for plot_monte_carlo. "
+            "Install with: pip install matplotlib"
+        )
 
 __all__ = [
     # Time series utilities

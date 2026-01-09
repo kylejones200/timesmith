@@ -50,7 +50,8 @@ docs = [
 examples = [
   "jupyter>=1.0",
   "notebook>=7.0",
-  "ipykernel>=6.0"
+  "ipykernel>=6.0",
+  "matplotlib>=3.5.0",  # For plotting utilities
 ]
 all = [
   "pmdarima>=2.0.0",
