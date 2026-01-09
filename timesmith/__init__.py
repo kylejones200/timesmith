@@ -1,6 +1,6 @@
 """TimeSmith: A time series machine learning library with strict layer boundaries."""
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 # Typing
 from timesmith.typing import (
