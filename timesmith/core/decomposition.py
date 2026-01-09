@@ -107,25 +107,6 @@ def detect_trend(
         # Theil-Sen estimator: more robust to outliers
         if not HAS_SCIPY:
             logger.warning("scipy not available, falling back to linear trend")
-            method = "linear"
-        else:
-            try:
-                slope, intercept = stats.theilslopes(y_arr, time_arr)[:2]
-            # Approximate correlation for Theil-Sen
-            r_value = np.corrcoef(time_arr, y_arr)[0, 1]
-            trend = slope * time_arr + intercept
-
-                return {
-                    "trend": trend,
-                    "slope": float(slope),
-                    "intercept": float(intercept),
-                    "strength": float(abs(r_value)),
-                }
-            except Exception as e:
-                logger.warning(f"Theil-Sen failed: {e}, falling back to linear")
-                method = "linear"
-        
-        if method == "linear":
             # Fall back to linear
             slope, intercept, r_value, _, _ = np.polyfit(time_arr, y_arr, 1, full=False)
             trend = slope * time_arr + intercept
@@ -135,6 +116,30 @@ def detect_trend(
                 "intercept": float(intercept),
                 "strength": float(abs(r_value)),
             }
+        else:
+            try:
+                slope, intercept = stats.theilslopes(y_arr, time_arr)[:2]
+                # Approximate correlation for Theil-Sen
+                r_value = np.corrcoef(time_arr, y_arr)[0, 1]
+                trend = slope * time_arr + intercept
+
+                return {
+                    "trend": trend,
+                    "slope": float(slope),
+                    "intercept": float(intercept),
+                    "strength": float(abs(r_value)),
+                }
+            except Exception as e:
+                logger.warning(f"Theil-Sen failed: {e}, falling back to linear")
+                # Fall back to linear
+                slope, intercept, r_value, _, _ = np.polyfit(time_arr, y_arr, 1, full=False)
+                trend = slope * time_arr + intercept
+                return {
+                    "trend": trend,
+                    "slope": float(slope),
+                    "intercept": float(intercept),
+                    "strength": float(abs(r_value)),
+                }
 
     elif method == "polynomial":
         coeffs = np.polyfit(time_arr, y_arr, deg=2)
