@@ -8,6 +8,7 @@ from timesmith.forecasters.moving_average import (
 )
 from timesmith.forecasters.exponential_smoothing import ExponentialSmoothingForecaster
 from timesmith.forecasters.monte_carlo import MonteCarloForecaster
+from timesmith.forecasters.black_scholes import BlackScholesMonteCarloForecaster
 from timesmith.forecasters.linear_trend import LinearTrendForecaster
 from timesmith.forecasters.synthetic_control import SyntheticControlForecaster
 
@@ -32,6 +33,7 @@ __all__ = [
     "WeightedMovingAverageForecaster",
     "ExponentialSmoothingForecaster",
     "MonteCarloForecaster",
+    "BlackScholesMonteCarloForecaster",
     "LinearTrendForecaster",
     "SyntheticControlForecaster",
 ]
