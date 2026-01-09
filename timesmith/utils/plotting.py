@@ -14,10 +14,22 @@ try:
     HAS_PLOTSMITH = True
 except ImportError:
     HAS_PLOTSMITH = False
+    ps = None
     logger.warning(
         "plotsmith not installed. Plotting functions will not be available. "
         "Install with: pip install plotsmith"
     )
+
+# Export HAS_PLOTSMITH and all plotting functions
+__all__ = [
+    'HAS_PLOTSMITH',
+    'plot_timeseries',
+    'plot_forecast',
+    'plot_residuals',
+    'plot_multiple_series',
+    'plot_autocorrelation',
+    'plot_monte_carlo_paths',
+]
 
 
 def plot_timeseries(
@@ -46,17 +58,44 @@ def plot_timeseries(
             "plotsmith is required for plotting. Install with: pip install plotsmith"
         )
 
+    import matplotlib.pyplot as plt
+    
+    # Try to use plotsmith's plot_timeseries if available
+    try:
+        if ps is not None and hasattr(ps, 'plot_timeseries'):
+            if isinstance(data, pd.Series):
+                data_for_plot = data.to_frame()
+            else:
+                data_for_plot = data
+            fig, ax = ps.plot_timeseries(
+                data_for_plot,
+                title=title,
+                xlabel=xlabel,
+                ylabel=ylabel,
+                figsize=figsize,
+                **kwargs
+            )
+            return fig, ax
+    except (AttributeError, TypeError, Exception) as e:
+        logger.debug(f"Plotsmith plot_timeseries not available, using matplotlib: {e}")
+    
+    # Fallback to matplotlib
+    fig, ax = plt.subplots(figsize=figsize or (12, 6))
     if isinstance(data, pd.Series):
-        data = data.to_frame()
-
-    fig, ax = ps.plot_timeseries(
-        data,
-        title=title,
-        xlabel=xlabel,
-        ylabel=ylabel,
-        figsize=figsize,
-        **kwargs
-    )
+        ax.plot(data.index, data.values, **kwargs)
+    else:
+        for col in data.columns:
+            ax.plot(data.index, data[col].values, label=col, **kwargs)
+    if title:
+        ax.set_title(title)
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    if isinstance(data, pd.DataFrame) and len(data.columns) > 1:
+        ax.legend()
+    ax.grid(True, alpha=0.3)
+    
     return fig, ax
 
 
@@ -84,14 +123,29 @@ def plot_forecast(
             "plotsmith is required for plotting. Install with: pip install plotsmith"
         )
 
-    # Combine historical and forecast for plotting
-    combined = pd.concat([historical, forecast])
+    import matplotlib.pyplot as plt
     
-    fig, ax = ps.plot_timeseries(
-        combined,
-        title=title,
-        **kwargs
-    )
+    # Try to use plotsmith if available
+    try:
+        if ps is not None and hasattr(ps, 'plot_timeseries'):
+            combined = pd.concat([historical, forecast])
+            fig, ax = ps.plot_timeseries(
+                combined,
+                title=title,
+                **kwargs
+            )
+        else:
+            raise AttributeError("Plotsmith plot_timeseries not available")
+    except (AttributeError, TypeError, Exception) as e:
+        logger.debug(f"Plotsmith not available, using matplotlib: {e}")
+        # Fallback to matplotlib
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.plot(historical.index, historical.values, label='Historical', linewidth=2)
+        ax.plot(forecast.index, forecast.values, label='Forecast', linewidth=2, linestyle='--')
+        if title:
+            ax.set_title(title)
+        ax.legend()
+        ax.grid(True, alpha=0.3)
 
     # Add forecast start line
     ax.axvline(historical.index[-1], color='red', linestyle=':', alpha=0.7, label='Forecast Start')
@@ -139,7 +193,7 @@ def plot_residuals(
     
     # Try to use plotsmith's plot_residuals if available
     try:
-        if hasattr(ps, 'plot_residuals'):
+        if ps is not None and hasattr(ps, 'plot_residuals'):
             fig, ax = ps.plot_residuals(
                 actual,
                 predicted,
@@ -193,9 +247,9 @@ def plot_multiple_series(
     
     # Try to use plotsmith if available
     try:
-        # Combine all series into a DataFrame
-        combined = pd.DataFrame(series_dict)
-        if hasattr(ps, 'plot_timeseries'):
+        if ps is not None and hasattr(ps, 'plot_timeseries'):
+            # Combine all series into a DataFrame
+            combined = pd.DataFrame(series_dict)
             fig, ax = ps.plot_timeseries(
                 combined,
                 title=title,
