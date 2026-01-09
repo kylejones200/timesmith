@@ -405,3 +405,135 @@ class BayesianChangePointDetector(BaseDetector):
 
         return flags
 
+
+class CUSUMDetector(BaseDetector):
+    """Change point detector using CUSUM (Cumulative Sum) method.
+
+    CUSUM detects changes by tracking cumulative deviations from a baseline.
+    Detects change points by looking for significant shifts in the rate values.
+    """
+
+    def __init__(
+        self,
+        baseline_window: int = 10,
+        threshold: float = 3.0,
+    ):
+        """Initialize CUSUM detector.
+
+        Args:
+            baseline_window: Window size for detecting changes.
+            threshold: Z-score threshold for change detection (lower = more sensitive).
+        """
+        super().__init__()
+        self.baseline_window = baseline_window
+        self.threshold = threshold
+
+        set_tags(
+            self,
+            scitype_input="SeriesLike",
+            scitype_output="SeriesLike",
+            handles_missing=False,
+            requires_sorted_index=True,
+        )
+
+    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "CUSUMDetector":
+        """Fit the change point detector.
+
+        Args:
+            y: Target time series.
+            X: Optional exogenous data (ignored).
+            **fit_params: Additional fit parameters.
+
+        Returns:
+            Self for method chaining.
+        """
+        if isinstance(y, pd.Series):
+            self.y_ = y.values
+        elif isinstance(y, pd.DataFrame) and y.shape[1] == 1:
+            self.y_ = y.iloc[:, 0].values
+        else:
+            self.y_ = np.asarray(y)
+
+        if len(self.y_) == 0:
+            raise ValueError("y cannot be empty")
+
+        if len(self.y_) < self.baseline_window * 2:
+            raise ValueError(
+                f"Need at least {self.baseline_window * 2} data points for CUSUM"
+            )
+
+        self._is_fitted = True
+        return self
+
+    def score(self, y: Any, X: Optional[Any] = None) -> np.ndarray:
+        """Compute change point scores (indices of detected change points).
+
+        Args:
+            y: Target time series (should match fit data).
+            X: Optional exogenous data (ignored).
+
+        Returns:
+            Array of change point indices.
+        """
+        self._check_is_fitted()
+
+        rates = self.y_
+        change_points = []
+        skip_until = 0
+
+        # Slide a window and compare statistics before/after each point
+        for i in range(self.baseline_window, len(rates) - self.baseline_window):
+            # Skip if we're in a cooldown period after detecting a change
+            if i < skip_until:
+                continue
+
+            # Get windows before and after this point
+            before = rates[max(0, i - self.baseline_window) : i]
+            after = rates[i : min(len(rates), i + self.baseline_window)]
+
+            if len(before) > 0 and len(after) > 0:
+                # Calculate means
+                mean_before = np.mean(before)
+                mean_after = np.mean(after)
+
+                # Calculate pooled standard deviation
+                std_before = np.std(before)
+                std_after = np.std(after)
+                pooled_std = np.sqrt(
+                    (std_before**2 + std_after**2) / 2 + 1e-10
+                )  # Add small constant to avoid div by zero
+
+                # Calculate z-score of difference in means
+                z_score = abs(mean_before - mean_after) / pooled_std
+
+                if z_score > self.threshold:
+                    change_points.append(i)
+                    # Skip ahead to avoid detecting the same change multiple times
+                    skip_until = i + self.baseline_window
+
+        change_points = np.array(change_points)
+
+        logger.info(f"CUSUM detected {len(change_points)} change points")
+
+        return change_points
+
+    def predict(
+        self, y: Any, X: Optional[Any] = None, threshold: Optional[float] = None
+    ) -> np.ndarray:
+        """Predict change point flags (binary array).
+
+        Args:
+            y: Target time series (should match fit data).
+            X: Optional exogenous data (ignored).
+            threshold: Optional threshold (ignored for CUSUM, uses self.threshold).
+
+        Returns:
+            Boolean array with True at change points.
+        """
+        change_points = self.score(y, X)
+
+        # Create boolean array
+        flags = np.zeros(len(self.y_), dtype=bool)
+        flags[change_points] = True
+
+        return flags
