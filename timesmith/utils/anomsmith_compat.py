@@ -1,4 +1,19 @@
-"""Compatibility utilities for AnomSmith integration."""
+"""Compatibility utilities for AnomSmith integration.
+
+NOTE: This module is NOT imported by default in timesmith.__init__ to avoid
+circular imports. Timesmith (foundation) must never import downstream repos
+by default. Users must explicitly import these utilities if needed:
+
+    from timesmith.utils.anomsmith_compat import (
+        convert_to_anomsmith_format,
+        convert_from_anomsmith_format,
+        get_anomsmith_detector,
+        list_anomsmith_detectors,
+    )
+
+This ensures a clean dependency graph where timesmith does not depend on
+downstream repos like anomsmith.
+"""
 
 import logging
 from typing import Any, Optional, Union

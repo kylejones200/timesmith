@@ -39,25 +39,11 @@ from timesmith.compose import (
     make_pipeline,
 )
 
-# Optional AnomSmith adapter
-try:
-    from timesmith.compose.anomsmith_adapter import AnomSmithAdapter
-    HAS_ANOMSMITH_ADAPTER = True
-except ImportError:
-    HAS_ANOMSMITH_ADAPTER = False
-
-# Optional AnomSmith compatibility utilities
-try:
-    from timesmith.utils.anomsmith_compat import (
-        convert_to_anomsmith_format,
-        convert_from_anomsmith_format,
-        get_anomsmith_detector,
-        list_anomsmith_detectors,
-        HAS_ANOMSMITH,
-    )
-    HAS_ANOMSMITH_COMPAT = HAS_ANOMSMITH
-except ImportError:
-    HAS_ANOMSMITH_COMPAT = False
+# Note: AnomSmith adapter and compatibility utilities are NOT imported by default
+# to avoid circular imports. Timesmith (foundation) must never import downstream repos.
+# Users can explicitly import if needed:
+#   from timesmith.compose.anomsmith_adapter import AnomSmithAdapter
+#   from timesmith.utils.anomsmith_compat import convert_to_anomsmith_format, ...
 
 # Tasks
 from timesmith.tasks import DetectTask, ForecastTask
@@ -363,18 +349,6 @@ if HAS_PLOTTING:
         "plot_multiple_series",
         "plot_autocorrelation",
         "plot_monte_carlo_paths",
-    ])
-
-# Conditionally add AnomSmith compatibility
-if HAS_ANOMSMITH_ADAPTER:
-    __all__.append("AnomSmithAdapter")
-
-if HAS_ANOMSMITH_COMPAT:
-    __all__.extend([
-        "convert_to_anomsmith_format",
-        "convert_from_anomsmith_format",
-        "get_anomsmith_detector",
-        "list_anomsmith_detectors",
     ])
 
 # Conditionally add optional components

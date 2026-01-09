@@ -1,4 +1,11 @@
-"""Type definitions and validators for time series data structures."""
+"""Type definitions and validators for time series data structures.
+
+This is the single source of truth for SeriesLike, PanelLike, and validators.
+Downstream repos must import from here:
+
+    from timesmith.typing import SeriesLike, PanelLike
+    from timesmith.typing.validators import assert_series_like, assert_panel_like
+"""
 
 from timesmith.typing.protocols import (
     ForecastLike,
@@ -8,7 +15,9 @@ from timesmith.typing.protocols import (
 )
 from timesmith.typing.validators import (
     assert_panel,
+    assert_panel_like,
     assert_series,
+    assert_series_like,
     assert_table,
     is_panel,
     is_series,
@@ -24,7 +33,9 @@ __all__ = [
     "is_panel",
     "is_table",
     "assert_series",
+    "assert_series_like",
     "assert_panel",
+    "assert_panel_like",
     "assert_table",
 ]
 

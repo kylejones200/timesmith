@@ -5,7 +5,9 @@ import pandas as pd
 
 from timesmith.typing.validators import (
     assert_panel,
+    assert_panel_like,
     assert_series,
+    assert_series_like,
     assert_table,
     is_panel,
     is_series,
@@ -52,6 +54,15 @@ class TestSeriesValidators:
         with pytest.raises(TypeError, match="must be SeriesLike"):
             assert_series(df)
 
+    def test_assert_series_like_alias(self):
+        """Test that assert_series_like is an alias for assert_series."""
+        s = pd.Series([1, 2, 3], index=pd.date_range("2020-01-01", periods=3))
+        assert_series_like(s)  # Should not raise
+        
+        df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
+        with pytest.raises(TypeError, match="must be SeriesLike"):
+            assert_series_like(df)
+
 
 class TestPanelValidators:
     """Tests for PanelLike validators."""
@@ -83,6 +94,14 @@ class TestPanelValidators:
         )
         df = pd.DataFrame({"value": [1, 2]}, index=index)
         assert_panel(df)  # Should not raise
+
+    def test_assert_panel_like_alias(self):
+        """Test that assert_panel_like is an alias for assert_panel."""
+        index = pd.MultiIndex.from_tuples(
+            [("A", "2020-01-01"), ("B", "2020-01-02")], names=["entity", "time"]
+        )
+        df = pd.DataFrame({"value": [1, 2]}, index=index)
+        assert_panel_like(df)  # Should not raise
 
 
 class TestTableValidators:

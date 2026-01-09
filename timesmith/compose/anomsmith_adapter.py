@@ -1,4 +1,14 @@
-"""Adapter to integrate AnomSmith detectors with TimeSmith."""
+"""Adapter to integrate AnomSmith detectors with TimeSmith.
+
+NOTE: This module is NOT imported by default in timesmith.__init__ to avoid
+circular imports. Timesmith (foundation) must never import downstream repos
+by default. Users must explicitly import this adapter if needed:
+
+    from timesmith.compose.anomsmith_adapter import AnomSmithAdapter
+
+This ensures a clean dependency graph where timesmith does not depend on
+downstream repos like anomsmith.
+"""
 
 import logging
 from typing import Any, Optional
