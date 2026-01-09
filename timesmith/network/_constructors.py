@@ -8,6 +8,158 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+# Try to import numba for JIT compilation (optional)
+try:
+    from numba import njit, prange
+    HAS_NUMBA = True
+except ImportError:
+    HAS_NUMBA = False
+    # Create dummy decorator
+    def njit(*args, **kwargs):
+        def decorator(func):
+            return func
+        if args and callable(args[0]):
+            return args[0]
+        return decorator
+    prange = range
+
+
+@njit(cache=True, fastmath=True)
+def _hvg_visibility_check(series: np.ndarray, i: int, j: int, limit_val: int) -> bool:
+    """Check horizontal visibility between nodes i and j (JIT-compiled).
+
+    Args:
+        series: Time series values.
+        i: First node index.
+        j: Second node index.
+        limit_val: Maximum temporal distance (use large value for no limit).
+
+    Returns:
+        True if nodes are horizontally visible.
+    """
+    if (j - i) > limit_val:
+        return False
+
+    # Check all intermediate values are below the line
+    for k in range(i + 1, j):
+        # Line equation: y = y[i] + (y[j] - y[i]) * (k - i) / (j - i)
+        line_value = series[i] + (series[j] - series[i]) * (k - i) / (j - i)
+        if series[k] >= line_value:
+            return False
+    return True
+
+
+@njit(cache=True, fastmath=True)
+def _nvg_visibility_check(series: np.ndarray, i: int, j: int, limit_val: int) -> bool:
+    """Check natural visibility between nodes i and j (JIT-compiled).
+
+    Args:
+        series: Time series values.
+        i: First node index.
+        j: Second node index.
+        limit_val: Maximum temporal distance (use large value for no limit).
+
+    Returns:
+        True if nodes are naturally visible.
+    """
+    if (j - i) > limit_val:
+        return False
+
+    # Check all intermediate points are below the line
+    for k in range(i + 1, j):
+        # Line connecting (i, series[i]) and (j, series[j])
+        line_value = series[i] + (series[j] - series[i]) * (k - i) / (j - i)
+        if series[k] >= line_value:
+            return False
+    return True
+
+
+@njit(cache=True)  # Disable parallel for now (can cause issues with dynamic allocation)
+def _hvg_edges_numba(
+    series: np.ndarray,
+    weighted: bool,
+    limit_val: int
+):
+    """Compute HVG edges using Numba JIT (fast path).
+
+    Returns:
+        Tuple of (source_indices, target_indices, weights).
+    """
+    n = len(series)
+    # Pre-allocate (overestimate, will trim)
+    max_edges = n * (n - 1) // 2
+    sources = np.zeros(max_edges, dtype=np.int64)
+    targets = np.zeros(max_edges, dtype=np.int64)
+    # Always allocate weights array (Numba needs fixed types)
+    weights_arr = np.zeros(max_edges, dtype=np.float64)
+
+    edge_count = 0
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            if (j - i) > limit_val:
+                continue
+
+            if _hvg_visibility_check(series, i, j, limit_val):
+                sources[edge_count] = i
+                targets[edge_count] = j
+                if weighted:
+                    weights_arr[edge_count] = abs(series[j] - series[i])
+                else:
+                    weights_arr[edge_count] = 1.0  # Dummy value if not weighted
+                edge_count += 1
+
+    # Trim to actual size
+    sources = sources[:edge_count]
+    targets = targets[:edge_count]
+    weights_arr = weights_arr[:edge_count]
+
+    return sources, targets, weights_arr
+
+
+@njit(cache=True)  # Disable parallel for now (can cause issues with dynamic allocation)
+def _nvg_edges_numba(
+    series: np.ndarray,
+    weighted: bool,
+    limit_val: int
+):
+    """Compute NVG edges using Numba JIT (fast path).
+
+    Returns:
+        Tuple of (source_indices, target_indices, weights).
+    """
+    n = len(series)
+    # Pre-allocate (overestimate, will trim)
+    max_edges = n * (n - 1) // 2
+    sources = np.zeros(max_edges, dtype=np.int64)
+    targets = np.zeros(max_edges, dtype=np.int64)
+    # Always allocate weights array (Numba needs fixed types)
+    weights_arr = np.zeros(max_edges, dtype=np.float64)
+
+    edge_count = 0
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            if (j - i) > limit_val:
+                continue
+
+            if _nvg_visibility_check(series, i, j, limit_val):
+                sources[edge_count] = i
+                targets[edge_count] = j
+                if weighted:
+                    # Weight by Euclidean distance in (time, value) space
+                    weights_arr[edge_count] = np.sqrt((j - i) ** 2 + (series[j] - series[i]) ** 2)
+                else:
+                    weights_arr[edge_count] = 1.0  # Dummy value if not weighted
+                edge_count += 1
+
+    # Trim to actual size
+    sources = sources[:edge_count]
+    targets = targets[:edge_count]
+    weights_arr = weights_arr[:edge_count]
+
+    return sources, targets, weights_arr
+
 
 def build_hvg(
     series: np.ndarray,
@@ -33,27 +185,49 @@ def build_hvg(
     G = nx.DiGraph() if directed else nx.Graph()
     G.add_nodes_from(range(n))
 
-    # Build edges
-    for i in range(n):
-        for j in range(i + 1, n):
-            if limit is not None and (j - i) > limit:
-                continue
+    # Use Numba JIT if available (much faster for large series)
+    if HAS_NUMBA and n > 100:  # Only use JIT for larger series (compilation overhead)
+        try:
+            limit_val = limit if limit is not None else n
+            sources, targets, weights_arr = _hvg_edges_numba(series, weighted, limit_val)
+            # Add edges in batch
+            if weighted:
+                edges = list(zip(sources, targets, weights_arr))
+                G.add_weighted_edges_from(edges)
+            else:
+                edges = list(zip(sources, targets))
+                G.add_edges_from(edges)
+        except Exception as e:
+            # Fallback to Python implementation if JIT fails
+            logger.warning(f"Numba JIT failed for HVG, using Python fallback: {e}")
+            # Continue to Python implementation below
+            HAS_NUMBA_FALLBACK = True
+    else:
+        HAS_NUMBA_FALLBACK = False
 
-            # Check horizontal visibility: all intermediate values must be below the line
-            visible = True
-            for k in range(i + 1, j):
-                # Line equation: y = y[i] + (y[j] - y[i]) * (k - i) / (j - i)
-                line_value = series[i] + (series[j] - series[i]) * (k - i) / (j - i)
-                if series[k] >= line_value:
-                    visible = False
-                    break
+    # Python fallback (or for small series)
+    if not HAS_NUMBA or n <= 100 or (HAS_NUMBA and 'HAS_NUMBA_FALLBACK' in locals()):
+        # Build edges
+        for i in range(n):
+            for j in range(i + 1, n):
+                if limit is not None and (j - i) > limit:
+                    continue
 
-            if visible:
-                if weighted:
-                    weight = abs(series[j] - series[i])
-                    G.add_edge(i, j, weight=weight)
-                else:
-                    G.add_edge(i, j)
+                # Check horizontal visibility: all intermediate values must be below the line
+                visible = True
+                for k in range(i + 1, j):
+                    # Line equation: y = y[i] + (y[j] - y[i]) * (k - i) / (j - i)
+                    line_value = series[i] + (series[j] - series[i]) * (k - i) / (j - i)
+                    if series[k] >= line_value:
+                        visible = False
+                        break
+
+                if visible:
+                    if weighted:
+                        weight = abs(series[j] - series[i])
+                        G.add_edge(i, j, weight=weight)
+                    else:
+                        G.add_edge(i, j)
 
     # Convert to undirected if needed
     if not directed:
@@ -89,29 +263,51 @@ def build_nvg(
     G = nx.DiGraph() if directed else nx.Graph()
     G.add_nodes_from(range(n))
 
-    # Build edges
-    for i in range(n):
-        for j in range(i + 1, n):
-            if limit is not None and (j - i) > limit:
-                continue
+    # Use Numba JIT if available (much faster for large series)
+    if HAS_NUMBA and n > 100:  # Only use JIT for larger series (compilation overhead)
+        try:
+            limit_val = limit if limit is not None else n
+            sources, targets, weights_arr = _nvg_edges_numba(series, weighted, limit_val)
+            # Add edges in batch
+            if weighted:
+                edges = list(zip(sources, targets, weights_arr))
+                G.add_weighted_edges_from(edges)
+            else:
+                edges = list(zip(sources, targets))
+                G.add_edges_from(edges)
+        except Exception as e:
+            # Fallback to Python implementation if JIT fails
+            logger.warning(f"Numba JIT failed for NVG, using Python fallback: {e}")
+            # Continue to Python implementation below
+            HAS_NUMBA_FALLBACK = True
+    else:
+        HAS_NUMBA_FALLBACK = False
 
-            # Check natural visibility: all intermediate points must be below the line
-            visible = True
-            for k in range(i + 1, j):
-                # Line connecting (i, series[i]) and (j, series[j])
-                # y = series[i] + (series[j] - series[i]) * (k - i) / (j - i)
-                line_value = series[i] + (series[j] - series[i]) * (k - i) / (j - i)
-                if series[k] >= line_value:
-                    visible = False
-                    break
+    # Python fallback (or for small series)
+    if not HAS_NUMBA or n <= 100 or (HAS_NUMBA and 'HAS_NUMBA_FALLBACK' in locals()):
+        # Build edges
+        for i in range(n):
+            for j in range(i + 1, n):
+                if limit is not None and (j - i) > limit:
+                    continue
 
-            if visible:
-                if weighted:
-                    # Weight by Euclidean distance in (time, value) space
-                    weight = np.sqrt((j - i) ** 2 + (series[j] - series[i]) ** 2)
-                    G.add_edge(i, j, weight=weight)
-                else:
-                    G.add_edge(i, j)
+                # Check natural visibility: all intermediate points must be below the line
+                visible = True
+                for k in range(i + 1, j):
+                    # Line connecting (i, series[i]) and (j, series[j])
+                    # y = series[i] + (series[j] - series[i]) * (k - i) / (j - i)
+                    line_value = series[i] + (series[j] - series[i]) * (k - i) / (j - i)
+                    if series[k] >= line_value:
+                        visible = False
+                        break
+
+                if visible:
+                    if weighted:
+                        # Weight by Euclidean distance in (time, value) space
+                        weight = np.sqrt((j - i) ** 2 + (series[j] - series[i]) ** 2)
+                        G.add_edge(i, j, weight=weight)
+                    else:
+                        G.add_edge(i, j)
 
     # Convert to undirected if needed
     if not directed:

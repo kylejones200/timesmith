@@ -30,6 +30,7 @@ forecasters = [
 ]
 network = [
   # networkx is now a core dependency
+  "numba>=0.57.0",  # Optional: JIT compilation for faster network construction
 ]
 distances = [
   "tslearn>=0.6.0",  # For optimized DTW distance (optional)

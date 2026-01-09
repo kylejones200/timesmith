@@ -8,6 +8,20 @@ from typing import Tuple, Optional
 import networkx as nx
 import numpy as np
 
+# Try to import numba for JIT compilation (optional)
+try:
+    from numba import njit, prange
+    HAS_NUMBA = True
+except ImportError:
+    HAS_NUMBA = False
+    def njit(*args, **kwargs):
+        def decorator(func):
+            return func
+        if args and callable(args[0]):
+            return args[0]
+        return decorator
+    prange = range
+
 
 def net_knn(
     D: np.ndarray,
@@ -41,15 +55,19 @@ def net_knn(
     # Create adjacency matrix
     A = np.zeros((n, n))
 
+    # Use vectorized approach for k-NN (faster than loop)
+    # For each row, find k smallest (excluding diagonal)
     for i in range(n):
         # Find k nearest neighbors (excluding self)
-        distances = D[i].copy()
-        distances[i] = np.inf  # Exclude self
-        neighbors = np.argpartition(distances, k - 1)[:k]
+        row = D[i].copy()
+        row[i] = np.inf  # Exclude self
+        neighbors = np.argpartition(row, k - 1)[:k]
 
-        for j in neighbors:
-            weight = D[i, j] if weighted else 1.0
-            A[i, j] = weight
+        # Vectorized assignment
+        if weighted:
+            A[i, neighbors] = D[i, neighbors]
+        else:
+            A[i, neighbors] = 1.0
 
     # Apply mutual k-NN constraint
     if mutual:
