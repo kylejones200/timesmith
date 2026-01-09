@@ -242,6 +242,7 @@ __all__ = [
     "remove_outliers_iqr",
     "monte_carlo_simulation",
     "plot_monte_carlo",
+    # Plotting utilities (if plotsmith available)
     "autocorrelation",
     "partial_autocorrelation",
     "autocorrelation_plot_data",
@@ -312,6 +313,17 @@ __all__ = [
     "euclidean_distance",
     "manhattan_distance",
 ]
+
+# Conditionally add plotting functions
+if HAS_PLOTTING:
+    __all__.extend([
+        "plot_timeseries",
+        "plot_forecast",
+        "plot_residuals",
+        "plot_multiple_series",
+        "plot_autocorrelation",
+        "plot_monte_carlo_paths",
+    ])
 
 # Conditionally add optional components
 if HAS_BAYESIAN:

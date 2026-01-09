@@ -135,8 +135,9 @@ def plot_residuals(
         )
 
     residuals = actual - predicted
+    import matplotlib.pyplot as plt
     
-    # Use plotsmith's plot_residuals if available
+    # Try to use plotsmith's plot_residuals if available
     try:
         if hasattr(ps, 'plot_residuals'):
             fig, ax = ps.plot_residuals(
@@ -146,34 +147,22 @@ def plot_residuals(
                 title=title,
                 **kwargs
             )
-        else:
-            # Fallback to matplotlib
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots(figsize=(10, 6))
-            if plot_type == 'scatter':
-                ax.scatter(actual, residuals, **kwargs)
-            elif plot_type == 'line':
-                ax.plot(actual, residuals, **kwargs)
-            elif plot_type == 'histogram':
-                ax.hist(residuals, bins=30, **kwargs)
-            ax.set_title(title)
-            ax.set_xlabel('Actual')
-            ax.set_ylabel('Residuals')
-            ax.grid(True, alpha=0.3)
-    except AttributeError:
-        # Fallback to matplotlib
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(figsize=(10, 6))
-        if plot_type == 'scatter':
-            ax.scatter(actual, residuals, **kwargs)
-        elif plot_type == 'line':
-            ax.plot(actual, residuals, **kwargs)
-        elif plot_type == 'histogram':
-            ax.hist(residuals, bins=30, **kwargs)
-        ax.set_title(title)
-        ax.set_xlabel('Actual')
-        ax.set_ylabel('Residuals')
-        ax.grid(True, alpha=0.3)
+            return fig, ax
+    except (AttributeError, TypeError, Exception) as e:
+        logger.debug(f"Plotsmith plot_residuals not available, using matplotlib: {e}")
+    
+    # Fallback to matplotlib
+    fig, ax = plt.subplots(figsize=(10, 6))
+    if plot_type == 'scatter':
+        ax.scatter(actual, residuals, **kwargs)
+    elif plot_type == 'line':
+        ax.plot(actual, residuals, **kwargs)
+    elif plot_type == 'histogram':
+        ax.hist(residuals, bins=30, **kwargs)
+    ax.set_title(title)
+    ax.set_xlabel('Actual')
+    ax.set_ylabel('Residuals')
+    ax.grid(True, alpha=0.3)
     
     return fig, ax
 
@@ -200,11 +189,12 @@ def plot_multiple_series(
             "plotsmith is required for plotting. Install with: pip install plotsmith"
         )
 
-    # Combine all series into a DataFrame
-    combined = pd.DataFrame(series_dict)
+    import matplotlib.pyplot as plt
     
-    # Use plotsmith if available, otherwise matplotlib
+    # Try to use plotsmith if available
     try:
+        # Combine all series into a DataFrame
+        combined = pd.DataFrame(series_dict)
         if hasattr(ps, 'plot_timeseries'):
             fig, ax = ps.plot_timeseries(
                 combined,
@@ -212,26 +202,18 @@ def plot_multiple_series(
                 figsize=figsize,
                 **kwargs
             )
-        else:
-            # Fallback to matplotlib
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots(figsize=figsize or (12, 6))
-            for label, series in series_dict.items():
-                ax.plot(series.index, series.values, label=label, **kwargs)
-            if title:
-                ax.set_title(title)
-            ax.legend()
-            ax.grid(True, alpha=0.3)
-    except AttributeError:
-        # Fallback to matplotlib
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(figsize=figsize or (12, 6))
-        for label, series in series_dict.items():
-            ax.plot(series.index, series.values, label=label, **kwargs)
-        if title:
-            ax.set_title(title)
-        ax.legend()
-        ax.grid(True, alpha=0.3)
+            return fig, ax
+    except (AttributeError, TypeError, Exception) as e:
+        logger.debug(f"Plotsmith plot_timeseries not available, using matplotlib: {e}")
+    
+    # Fallback to matplotlib
+    fig, ax = plt.subplots(figsize=figsize or (12, 6))
+    for label, series in series_dict.items():
+        ax.plot(series.index, series.values, label=label, **kwargs)
+    if title:
+        ax.set_title(title)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
     
     return fig, ax
 
