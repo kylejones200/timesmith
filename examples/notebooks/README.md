@@ -94,6 +94,11 @@ pip install timesmith[all]
 
 # Or install specific extras
 pip install timesmith[network,forecasters,dev]
+
+# For plotting in notebooks, install plotsmith
+pip install plotsmith
+# Or install with examples extras (includes plotsmith)
+pip install timesmith[examples]
 ```
 
 ### Launch Jupyter
