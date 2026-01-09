@@ -8,14 +8,24 @@ from typing import Any, Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
-from scipy import signal, stats
-from scipy.ndimage import uniform_filter1d
 
 from timesmith.core.base import BaseTransformer
 from timesmith.core.tags import set_tags
 from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
+
+# Optional scipy imports
+try:
+    from scipy import signal, stats
+    from scipy.ndimage import uniform_filter1d
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
+    logger.warning(
+        "scipy not installed. Decomposition functionality will be limited. "
+        "Install with: pip install scipy"
+    )
 
 
 def _detect_seasonal_period(data: np.ndarray, max_period: int = 50) -> Optional[int]:
@@ -37,7 +47,15 @@ def _detect_seasonal_period(data: np.ndarray, max_period: int = 50) -> Optional[
     autocorr = autocorr[n - 1 :] / autocorr[n - 1]
 
     # Find peaks in autocorrelation (potential seasonal periods)
-    peaks, _ = signal.find_peaks(autocorr[1:max_period], height=0.3)
+    if not HAS_SCIPY:
+        # Fallback: find peaks manually
+        peaks = []
+        for i in range(1, min(max_period, len(autocorr) - 1)):
+            if autocorr[i] > 0.3 and autocorr[i] > autocorr[i-1] and autocorr[i] > autocorr[i+1]:
+                peaks.append(i)
+        peaks = np.array(peaks)
+    else:
+        peaks, _ = signal.find_peaks(autocorr[1:max_period], height=0.3)
 
     if len(peaks) > 0:
         # Return first significant peak
@@ -87,20 +105,27 @@ def detect_trend(
 
     elif method == "theil_sen":
         # Theil-Sen estimator: more robust to outliers
-        try:
-            slope, intercept = stats.theilslopes(y_arr, time_arr)[:2]
+        if not HAS_SCIPY:
+            logger.warning("scipy not available, falling back to linear trend")
+            method = "linear"
+        else:
+            try:
+                slope, intercept = stats.theilslopes(y_arr, time_arr)[:2]
             # Approximate correlation for Theil-Sen
             r_value = np.corrcoef(time_arr, y_arr)[0, 1]
             trend = slope * time_arr + intercept
 
-            return {
-                "trend": trend,
-                "slope": float(slope),
-                "intercept": float(intercept),
-                "strength": float(abs(r_value)),
-            }
-        except Exception as e:
-            logger.warning(f"Theil-Sen failed: {e}, falling back to linear")
+                return {
+                    "trend": trend,
+                    "slope": float(slope),
+                    "intercept": float(intercept),
+                    "strength": float(abs(r_value)),
+                }
+            except Exception as e:
+                logger.warning(f"Theil-Sen failed: {e}, falling back to linear")
+                method = "linear"
+        
+        if method == "linear":
             # Fall back to linear
             slope, intercept, r_value, _, _ = np.polyfit(time_arr, y_arr, 1, full=False)
             trend = slope * time_arr + intercept
@@ -127,7 +152,11 @@ def detect_trend(
 
     elif method == "moving_average":
         window = max(3, len(y_arr) // 10)
-        trend = uniform_filter1d(y_arr, size=window, mode="nearest")
+        if not HAS_SCIPY:
+            # Fallback: simple moving average
+            trend = np.convolve(y_arr, np.ones(window)/window, mode='same')
+        else:
+            trend = uniform_filter1d(y_arr, size=window, mode="nearest")
         # Calculate trend strength as variance reduction
         var_original = np.var(y_arr)
         var_residual = np.var(y_arr - trend)
@@ -318,7 +347,11 @@ class DecomposeTransformer(BaseTransformer):
             trend_window = self.trend_window
 
         # Extract trend using moving average
-        trend = uniform_filter1d(self.y_, size=trend_window, mode="nearest")
+        if not HAS_SCIPY:
+            # Fallback: simple moving average
+            trend = np.convolve(self.y_, np.ones(trend_window)/trend_window, mode='same')
+        else:
+            trend = uniform_filter1d(self.y_, size=trend_window, mode="nearest")
 
         # Detrend
         detrended = self.y_ - trend

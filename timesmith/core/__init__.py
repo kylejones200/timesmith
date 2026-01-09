@@ -2,6 +2,8 @@
 
 import logging
 
+logger = logging.getLogger(__name__)
+
 from timesmith.core.base import (
     BaseDetector,
     BaseEstimator,

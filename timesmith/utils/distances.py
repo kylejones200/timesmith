@@ -7,10 +7,20 @@ import logging
 from typing import Optional
 
 import numpy as np
-from scipy import stats
-from scipy.signal import correlate
 
 logger = logging.getLogger(__name__)
+
+# Optional scipy imports
+try:
+    from scipy import stats
+    from scipy.signal import correlate
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
+    logger.warning(
+        "scipy not installed. Some distance functions will have limited functionality. "
+        "Install with: pip install scipy"
+    )
 
 try:
     from tslearn.metrics import cdist_dtw as _cdist_dtw
@@ -44,6 +54,11 @@ def correlation_distance(
     if method == "pearson":
         corr = np.corrcoef(x, y)[0, 1]
     elif method == "spearman":
+        if not HAS_SCIPY:
+            raise ImportError(
+                "scipy is required for spearman correlation. "
+                "Install with: pip install scipy"
+            )
         corr, _ = stats.spearmanr(x, y)
     else:
         raise ValueError(f"Unsupported correlation method: {method}")
@@ -68,6 +83,11 @@ def cross_correlation_distance(
     Returns:
         Distance value based on maximum cross-correlation.
     """
+    if not HAS_SCIPY:
+        raise ImportError(
+            "scipy is required for cross_correlation_distance. "
+            "Install with: pip install scipy"
+        )
     ccf = correlate(x - x.mean(), y - y.mean(), mode="full")
     lags = np.arange(-(len(x) - 1), len(x))
     mask = (lags >= -max_lag) & (lags <= max_lag)
