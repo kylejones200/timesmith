@@ -81,6 +81,79 @@ def mape(y_true: Any, y_pred: Any) -> float:
     return float(np.mean(percentage_errors))
 
 
+def bias(y_true: Any, y_pred: Any) -> float:
+    """Calculate bias (mean error).
+
+    Bias measures the average difference between predicted and actual values.
+    Positive bias indicates over-estimation, negative indicates under-estimation.
+
+    Args:
+        y_true: True values.
+        y_pred: Predicted values.
+
+    Returns:
+        Bias value.
+    """
+    y_true = _to_array(y_true)
+    y_pred = _to_array(y_pred)
+
+    if len(y_true) != len(y_pred):
+        raise ValueError(
+            f"y_true and y_pred must have same length. "
+            f"Got {len(y_true)} and {len(y_pred)}"
+        )
+
+    # Remove NaN and infinite values
+    mask = ~(np.isnan(y_true) | np.isnan(y_pred) | np.isinf(y_true) | np.isinf(y_pred))
+    y_true = y_true[mask]
+    y_pred = y_pred[mask]
+
+    if len(y_true) == 0:
+        return float(np.nan)
+
+    return float(np.mean(y_pred - y_true))
+
+
+def ubrmse(y_true: Any, y_pred: Any) -> float:
+    """Calculate Unbiased Root Mean Square Error (ubRMSE).
+
+    ubRMSE removes the impact of bias from RMSE, measuring only the random
+    component of error. Useful when assessing precision separately from accuracy.
+
+    Args:
+        y_true: True values.
+        y_pred: Predicted values.
+
+    Returns:
+        ubRMSE value.
+    """
+    y_true = _to_array(y_true)
+    y_pred = _to_array(y_pred)
+
+    if len(y_true) != len(y_pred):
+        raise ValueError(
+            f"y_true and y_pred must have same length. "
+            f"Got {len(y_true)} and {len(y_pred)}"
+        )
+
+    # Remove NaN and infinite values
+    mask = ~(np.isnan(y_true) | np.isnan(y_pred) | np.isinf(y_true) | np.isinf(y_pred))
+    y_true = y_true[mask]
+    y_pred = y_pred[mask]
+
+    if len(y_true) == 0:
+        return float(np.nan)
+
+    # Calculate bias
+    bias_val = np.mean(y_pred - y_true)
+
+    # Remove bias from predictions
+    y_pred_unbiased = y_pred - bias_val
+
+    # Calculate RMSE of unbiased predictions
+    return float(np.sqrt(np.mean((y_true - y_pred_unbiased) ** 2)))
+
+
 def _to_array(data: Any) -> np.ndarray:
     """Convert data to numpy array.
 

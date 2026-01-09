@@ -16,6 +16,13 @@ try:
 except ImportError:
     HAS_BAYESIAN = False
 
+# Optional Ensemble forecaster
+try:
+    from timesmith.forecasters.ensemble import EnsembleForecaster
+    HAS_ENSEMBLE = True
+except ImportError:
+    HAS_ENSEMBLE = False
+
 __all__ = [
     "ARIMAForecaster",
     "SimpleMovingAverageForecaster",
@@ -27,4 +34,7 @@ __all__ = [
 
 if HAS_BAYESIAN:
     __all__.append("BayesianForecaster")
+
+if HAS_ENSEMBLE:
+    __all__.append("EnsembleForecaster")
 

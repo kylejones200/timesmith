@@ -1,7 +1,7 @@
 """Evaluation tools: splitters, metrics, backtests, and summaries."""
 
 from timesmith.eval.splitters import ExpandingWindowSplit, SlidingWindowSplit
-from timesmith.eval.metrics import mae, mape, rmse
+from timesmith.eval.metrics import bias, mae, mape, rmse, ubrmse
 from timesmith.eval.backtest import backtest_forecaster
 from timesmith.eval.summary import summarize_backtest
 
@@ -11,6 +11,8 @@ __all__ = [
     "mae",
     "rmse",
     "mape",
+    "bias",
+    "ubrmse",
     "backtest_forecaster",
     "summarize_backtest",
 ]

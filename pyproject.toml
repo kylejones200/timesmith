@@ -41,6 +41,12 @@ bayesian = [
   "pymc>=5.0.0",  # For Bayesian forecasting
   "arviz>=0.15.0",  # For Bayesian diagnostics and visualization
 ]
+ensemble = [
+  "scikit-learn>=1.0.0",  # For ensemble forecasting (classification + regression)
+]
+statsmodels = [
+  "statsmodels>=0.14.0",  # For stationarity tests and advanced time series analysis
+]
 dev = [
   "pytest>=7.0",
   "pytest-cov>=4.0",
@@ -70,6 +76,7 @@ all = [
   "ruptures>=1.1.0",
   "pymc>=5.0.0",
   "arviz>=0.15.0",
+  "scikit-learn>=1.0.0",
   "pytest>=7.0",
   "pytest-cov>=4.0",
   "black>=23.0",

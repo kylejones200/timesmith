@@ -36,6 +36,20 @@ except ImportError:
             "Install with: pip install matplotlib"
         )
 
+# Stationarity tests (optional statsmodels)
+try:
+    from timesmith.utils.stationarity import test_stationarity
+    HAS_STATIONARITY = True
+except ImportError:
+    HAS_STATIONARITY = False
+
+# Climatology utilities (always available)
+from timesmith.utils.climatology import (
+    compute_climatology,
+    compute_anomalies,
+    detect_extreme_events,
+)
+
 __all__ = [
     # Time series utilities
     "load_ts_data",
@@ -55,4 +69,15 @@ __all__ = [
     "euclidean_distance",
     "manhattan_distance",
 ]
+
+# Conditionally add stationarity tests
+if HAS_STATIONARITY:
+    __all__.append("test_stationarity")
+
+# Climatology utilities
+__all__.extend([
+    "compute_climatology",
+    "compute_anomalies",
+    "detect_extreme_events",
+])
 

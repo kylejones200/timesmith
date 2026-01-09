@@ -50,6 +50,16 @@ try:
 except ImportError:
     HAS_CHANGEPOINT = False
 
+# Filters (requires optional scipy)
+try:
+    from timesmith.core.filters import (
+        ButterworthFilter,
+        SavitzkyGolayFilter,
+    )
+    HAS_FILTERS = True
+except ImportError:
+    HAS_FILTERS = False
+
 __all__ = [
     "BaseObject",
     "BaseEstimator",
@@ -86,5 +96,12 @@ if HAS_CHANGEPOINT:
         "PELTDetector",
         "BayesianChangePointDetector",
         "preprocess_for_changepoint",
+    ])
+
+# Conditionally add filter exports
+if HAS_FILTERS:
+    __all__.extend([
+        "ButterworthFilter",
+        "SavitzkyGolayFilter",
     ])
 

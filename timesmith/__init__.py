@@ -47,9 +47,11 @@ from timesmith.eval import (
     ExpandingWindowSplit,
     SlidingWindowSplit,
     backtest_forecaster,
+    bias,
     mae,
     mape,
     rmse,
+    ubrmse,
     summarize_backtest,
 )
 
@@ -72,6 +74,20 @@ from timesmith.utils import (
     remove_outliers_iqr,
     resample_ts,
     split_ts,
+)
+
+# Optional stationarity tests
+try:
+    from timesmith.utils.stationarity import test_stationarity
+    HAS_STATIONARITY = True
+except ImportError:
+    HAS_STATIONARITY = False
+
+# Climatology utilities
+from timesmith.utils.climatology import (
+    compute_climatology,
+    compute_anomalies,
+    detect_extreme_events,
 )
 
 # Network
@@ -110,6 +126,13 @@ from timesmith.core import (
     preprocess_for_changepoint,
 )
 
+# Optional filters
+try:
+    from timesmith.core.filters import ButterworthFilter, SavitzkyGolayFilter
+    HAS_FILTERS = True
+except ImportError:
+    HAS_FILTERS = False
+
 # Forecasters
 from timesmith.forecasters import (
     ARIMAForecaster,
@@ -126,6 +149,13 @@ try:
     HAS_BAYESIAN = True
 except ImportError:
     HAS_BAYESIAN = False
+
+# Optional Ensemble forecaster
+try:
+    from timesmith.forecasters.ensemble import EnsembleForecaster
+    HAS_ENSEMBLE = True
+except ImportError:
+    HAS_ENSEMBLE = False
 
 __all__ = [
     # Typing
@@ -165,6 +195,8 @@ __all__ = [
     "mae",
     "rmse",
     "mape",
+    "bias",
+    "ubrmse",
     "backtest_forecaster",
     "summarize_backtest",
     # Results
@@ -206,6 +238,8 @@ __all__ = [
     "WeightedMovingAverageForecaster",
     "ExponentialSmoothingForecaster",
     "MonteCarloForecaster",
+    # Filters (conditionally exported)
+    # Stationarity tests (conditionally exported)
     # Network
     "Graph",
     "HVGFeaturizer",
@@ -227,7 +261,16 @@ __all__ = [
     "manhattan_distance",
 ]
 
-# Conditionally add Bayesian forecaster
+# Conditionally add optional components
 if HAS_BAYESIAN:
     __all__.append("BayesianForecaster")
+
+if HAS_ENSEMBLE:
+    __all__.append("EnsembleForecaster")
+
+if HAS_FILTERS:
+    __all__.extend(["ButterworthFilter", "SavitzkyGolayFilter"])
+
+if HAS_STATIONARITY:
+    __all__.append("test_stationarity")
 

@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
-from scipy import signal
+from scipy import signal, stats
 from scipy.ndimage import uniform_filter1d
 
 from timesmith.core.base import BaseTransformer
@@ -85,6 +85,32 @@ def detect_trend(
             "strength": float(strength),
         }
 
+    elif method == "theil_sen":
+        # Theil-Sen estimator: more robust to outliers
+        try:
+            slope, intercept = stats.theilslopes(y_arr, time_arr)[:2]
+            # Approximate correlation for Theil-Sen
+            r_value = np.corrcoef(time_arr, y_arr)[0, 1]
+            trend = slope * time_arr + intercept
+
+            return {
+                "trend": trend,
+                "slope": float(slope),
+                "intercept": float(intercept),
+                "strength": float(abs(r_value)),
+            }
+        except Exception as e:
+            logger.warning(f"Theil-Sen failed: {e}, falling back to linear")
+            # Fall back to linear
+            slope, intercept, r_value, _, _ = np.polyfit(time_arr, y_arr, 1, full=False)
+            trend = slope * time_arr + intercept
+            return {
+                "trend": trend,
+                "slope": float(slope),
+                "intercept": float(intercept),
+                "strength": float(abs(r_value)),
+            }
+
     elif method == "polynomial":
         coeffs = np.polyfit(time_arr, y_arr, deg=2)
         trend = np.polyval(coeffs, time_arr)
@@ -113,7 +139,7 @@ def detect_trend(
         }
 
     else:
-        raise ValueError(f"Unknown method: {method}")
+        raise ValueError(f"Unknown method: {method}. Use 'linear', 'theil_sen', 'polynomial', or 'moving_average'")
 
 
 def detect_seasonality(
