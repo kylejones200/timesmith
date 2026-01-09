@@ -46,8 +46,11 @@ from timesmith.tasks import DetectTask, ForecastTask
 from timesmith.eval import (
     ExpandingWindowSplit,
     SlidingWindowSplit,
+    ModelComparison,
+    ModelResult,
     backtest_forecaster,
     bias,
+    compare_models,
     mae,
     mape,
     rmse,
@@ -62,6 +65,7 @@ from timesmith.results import BacktestResult, Forecast
 from timesmith.utils import (
     autocorrelation,
     autocorrelation_plot_data,
+    bootstrap_confidence_intervals,
     correlation_distance,
     create_sequences,
     create_sequences_with_exog,
@@ -74,6 +78,7 @@ from timesmith.utils import (
     load_ts_data,
     manhattan_distance,
     monte_carlo_simulation,
+    parametric_confidence_intervals,
     partial_autocorrelation,
     plot_monte_carlo,
     remove_outliers_iqr,
@@ -206,6 +211,9 @@ __all__ = [
     "ubrmse",
     "backtest_forecaster",
     "summarize_backtest",
+    "ModelComparison",
+    "ModelResult",
+    "compare_models",
     # Results
     "Forecast",
     "BacktestResult",
@@ -222,11 +230,14 @@ __all__ = [
     "autocorrelation",
     "partial_autocorrelation",
     "autocorrelation_plot_data",
+    "bootstrap_confidence_intervals",
+    "parametric_confidence_intervals",
     # Featurizers
     "LagFeaturizer",
     "RollingFeaturizer",
     "TimeFeaturizer",
     "DifferencingFeaturizer",
+    "SeasonalFeaturizer",
     # Transformers
     "OutlierRemover",
     "MissingValueFiller",

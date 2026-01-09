@@ -64,6 +64,12 @@ from timesmith.utils.autocorrelation import (
     partial_autocorrelation,
 )
 
+# Confidence intervals (always available)
+from timesmith.utils.confidence_intervals import (
+    bootstrap_confidence_intervals,
+    parametric_confidence_intervals,
+)
+
 __all__ = [
     # Time series utilities
     "load_ts_data",
@@ -107,5 +113,11 @@ __all__.extend([
     "autocorrelation",
     "partial_autocorrelation",
     "autocorrelation_plot_data",
+])
+
+# Confidence intervals
+__all__.extend([
+    "bootstrap_confidence_intervals",
+    "parametric_confidence_intervals",
 ])
 

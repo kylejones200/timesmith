@@ -17,6 +17,7 @@ from timesmith.core.featurizers import (
     DifferencingFeaturizer,
     LagFeaturizer,
     RollingFeaturizer,
+    SeasonalFeaturizer,
     TimeFeaturizer,
 )
 from timesmith.core.tags import get_tags, set_tags
@@ -103,7 +104,7 @@ __all__ = [
     "TimeFeaturizer",
     "DifferencingFeaturizer",
     "DegradationRateFeaturizer",
-    "DegradationRateFeaturizer",
+    "SeasonalFeaturizer",
     "OutlierRemover",
     "MissingValueFiller",
     "Resampler",

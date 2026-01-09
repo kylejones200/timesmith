@@ -290,6 +290,71 @@ class DifferencingFeaturizer(BaseFeaturizer):
         return df
 
 
+class SeasonalFeaturizer(BaseFeaturizer):
+    """Create seasonal features using sine/cosine transformations.
+
+    Transforms SeriesLike to TableLike by creating seasonal sine/cosine features.
+    """
+
+    def __init__(self, seasonal_periods: List[int] = [12, 365]):
+        """Initialize seasonal featurizer.
+
+        Args:
+            seasonal_periods: List of seasonal periods (e.g., [12, 365] for monthly/yearly).
+        """
+        self.seasonal_periods = seasonal_periods
+        set_tags(
+            self,
+            scitype_input="SeriesLike",
+            scitype_output="TableLike",
+            handles_missing=False,
+            requires_sorted_index=True,
+        )
+
+    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "SeasonalFeaturizer":
+        """Fit the featurizer (no-op for seasonal features).
+
+        Args:
+            y: Target time series.
+            X: Optional exogenous data (ignored).
+            **fit_params: Additional fit parameters.
+
+        Returns:
+            Self for method chaining.
+        """
+        self._is_fitted = True
+        return self
+
+    def transform(self, y: Any, X: Optional[Any] = None) -> pd.DataFrame:
+        """Create seasonal features.
+
+        Args:
+            y: SeriesLike data.
+            X: Optional exogenous data (ignored).
+
+        Returns:
+            TableLike DataFrame with seasonal features.
+        """
+        self._check_is_fitted()
+
+        if isinstance(y, pd.Series):
+            series = y
+        elif isinstance(y, pd.DataFrame) and y.shape[1] == 1:
+            series = y.iloc[:, 0]
+        else:
+            raise ValueError("y must be SeriesLike (Series or single-column DataFrame)")
+
+        df = pd.DataFrame({"value": series})
+        n = len(series)
+        t = np.arange(n)
+
+        for period in self.seasonal_periods:
+            df[f"seasonal_sin_{period}"] = np.sin(2 * np.pi * t / period)
+            df[f"seasonal_cos_{period}"] = np.cos(2 * np.pi * t / period)
+
+        return df
+
+
 class DegradationRateFeaturizer(BaseFeaturizer):
     """Create degradation rate features (rate of change) from time series.
 
