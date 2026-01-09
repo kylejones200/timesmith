@@ -7,27 +7,21 @@ as TableLike output (degree sequences, metrics, etc.).
 import logging
 from typing import Any, Optional, Union
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 
 from timesmith.core.base import BaseFeaturizer
 from timesmith.core.tags import set_tags
 from timesmith.network.graph import Graph
+from timesmith.network._constructors import (
+    build_hvg,
+    build_nvg,
+    build_recurrence_network,
+    build_transition_network,
+)
 
 logger = logging.getLogger(__name__)
-
-# Try to import ts2net implementations
-try:
-    from ts2net.core.visibility import HVG as _HVG_Old, NVG as _NVG_Old
-    from ts2net.core.recurrence import RecurrenceNetwork as _RecurrenceNetwork
-    from ts2net.core.transition import TransitionNetwork as _TransitionNetwork
-    HAS_TS2NET = True
-except ImportError:
-    HAS_TS2NET = False
-    logger.warning(
-        "ts2net not installed. Network featurizers will not work. "
-        "Install with: pip install ts2net"
-    )
 
 
 def _validate_series(y: Any) -> np.ndarray:
@@ -118,11 +112,6 @@ class HVGFeaturizer(BaseFeaturizer):
             directed: If True, create directed graph.
             include_degrees: Whether to include degree sequence in output.
         """
-        if not HAS_TS2NET:
-            raise ImportError(
-                "ts2net is required for HVGFeaturizer. Install with: pip install ts2net"
-            )
-
         super().__init__()
         self.weighted = weighted
         self.limit = limit
@@ -165,10 +154,13 @@ class HVGFeaturizer(BaseFeaturizer):
 
         series = _validate_series(y)
 
-        # Build HVG using ts2net
-        hvg = _HVG_Old(weighted=self.weighted, limit=self.limit, directed=self.directed)
-        hvg.fit(series)
-        G_nx, A = hvg.transform()
+        # Build HVG using native implementation
+        G_nx, A = build_hvg(
+            series,
+            weighted=self.weighted,
+            limit=self.limit,
+            directed=self.directed,
+        )
 
         # Convert to Graph object
         edges = list(G_nx.edges(data="weight" if self.weighted else False))
@@ -208,11 +200,6 @@ class NVGFeaturizer(BaseFeaturizer):
             directed: If True, create directed graph.
             include_degrees: Whether to include degree sequence in output.
         """
-        if not HAS_TS2NET:
-            raise ImportError(
-                "ts2net is required for NVGFeaturizer. Install with: pip install ts2net"
-            )
-
         super().__init__()
         self.weighted = weighted
         self.limit = limit
@@ -255,10 +242,13 @@ class NVGFeaturizer(BaseFeaturizer):
 
         series = _validate_series(y)
 
-        # Build NVG using ts2net
-        nvg = _NVG_Old(weighted=self.weighted, limit=self.limit, directed=self.directed)
-        nvg.fit(series)
-        G_nx, A = nvg.transform()
+        # Build NVG using native implementation
+        G_nx, A = build_nvg(
+            series,
+            weighted=self.weighted,
+            limit=self.limit,
+            directed=self.directed,
+        )
 
         # Convert to Graph object
         edges = list(G_nx.edges(data="weight" if self.weighted else False))
@@ -304,12 +294,6 @@ class RecurrenceNetworkFeaturizer(BaseFeaturizer):
             k: Number of neighbors for k-NN rule.
             include_degrees: Whether to include degree sequence in output.
         """
-        if not HAS_TS2NET:
-            raise ImportError(
-                "ts2net is required for RecurrenceNetworkFeaturizer. "
-                "Install with: pip install ts2net"
-            )
-
         super().__init__()
         self.threshold = threshold
         self.embedding_dimension = embedding_dimension
@@ -355,8 +339,9 @@ class RecurrenceNetworkFeaturizer(BaseFeaturizer):
 
         series = _validate_series(y)
 
-        # Build recurrence network using ts2net
-        rn = _RecurrenceNetwork(
+        # Build recurrence network using native implementation
+        G_nx = build_recurrence_network(
+            series,
             threshold=self.threshold,
             embedding_dimension=self.embedding_dimension,
             time_delay=self.time_delay,
@@ -364,8 +349,6 @@ class RecurrenceNetworkFeaturizer(BaseFeaturizer):
             rule=self.rule,
             k=self.k,
         )
-        rn.fit(series)
-        G_nx = rn.transform()
 
         # Convert to Graph object
         edges = list(G_nx.edges())
@@ -400,12 +383,6 @@ class TransitionNetworkFeaturizer(BaseFeaturizer):
             symbolizer: Symbolization method ('equal_width' or 'ordinal').
             include_degrees: Whether to include degree sequence in output.
         """
-        if not HAS_TS2NET:
-            raise ImportError(
-                "ts2net is required for TransitionNetworkFeaturizer. "
-                "Install with: pip install ts2net"
-            )
-
         super().__init__()
         self.n_bins = n_bins
         self.order = order
@@ -448,14 +425,13 @@ class TransitionNetworkFeaturizer(BaseFeaturizer):
 
         series = _validate_series(y)
 
-        # Build transition network using ts2net
-        tn = _TransitionNetwork(
+        # Build transition network using native implementation
+        G_nx = build_transition_network(
+            series,
             n_bins=self.n_bins,
             order=self.order,
             symbolizer=self.symbolizer,
         )
-        tn.fit(series)
-        G_nx = tn.transform()
 
         # Convert to Graph object
         edges = list(G_nx.edges())

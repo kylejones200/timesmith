@@ -28,7 +28,6 @@ forecasters = [
   "statsmodels>=0.14.0",  # For ExponentialSmoothingForecaster
 ]
 network = [
-  "ts2net>=0.6.0",  # For network construction (HVG, NVG, etc.)
   "networkx>=3.0",  # For network metrics and analysis
 ]
 distances = [
@@ -72,7 +71,6 @@ examples = [
 all = [
   "pmdarima>=2.0.0",
   "statsmodels>=0.14.0",
-  "ts2net>=0.6.0",
   "networkx>=3.0",
   "tslearn>=0.6.0",
   "ruptures>=1.1.0",
