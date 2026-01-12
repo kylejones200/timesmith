@@ -1,9 +1,12 @@
 """Native network construction algorithms for time series."""
 
 import logging
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
+
+if TYPE_CHECKING:
+    import networkx as nx
 
 logger = logging.getLogger(__name__)
 
@@ -520,7 +523,7 @@ def build_transition_network(
     n_bins: int = 10,
     order: int = 1,
     symbolizer: Optional[str] = None,
-) -> nx.DiGraph:
+) -> "nx.DiGraph":
     """Build Transition Network.
 
     Args:

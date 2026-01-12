@@ -23,9 +23,12 @@ try:
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
+    signal = None
+    stats = None
+    uniform_filter1d = None
     logger.warning(
         "scipy not installed. Decomposition functionality will be limited. "
-        "Install with: pip install scipy"
+        "Install with: pip install scipy or pip install timesmith[scipy]"
     )
 
 

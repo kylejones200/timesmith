@@ -19,9 +19,11 @@ try:
 except ImportError:
     HAS_NETWORKX = False
     HAS_COMMUNITY = False
+    nx = None
+    community = None
     logger.warning(
         "NetworkX not installed. Network metrics will not work. "
-        "Install with: pip install networkx"
+        "Install with: pip install networkx or pip install timesmith[network]"
     )
 
 

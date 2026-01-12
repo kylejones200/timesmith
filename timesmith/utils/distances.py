@@ -17,9 +17,11 @@ try:
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
+    stats = None
+    correlate = None
     logger.warning(
         "scipy not installed. Some distance functions will have limited functionality. "
-        "Install with: pip install scipy"
+        "Install with: pip install scipy or pip install timesmith[scipy]"
     )
 
 try:
