@@ -7,7 +7,7 @@ Thank you for your interest in contributing to TimeSmith! This document provides
 - Report bugs and suggest features via GitHub Issues
 - Improve documentation - fix typos, add examples, clarify explanations
 - Submit bug fixes - help resolve existing issues
-- Add new features - implement new geomodeling algorithms or utilities
+- Add new features - implement new time series algorithms or utilities
 - Write tests - improve test coverage
 - Share examples - contribute tutorial notebooks or example workflows
 
@@ -89,9 +89,17 @@ Test guidelines:
 Update documentation for any user-facing changes:
 
 ```bash
-# Build documentation locally
-mkdocs serve
+# Build documentation locally (using Sphinx)
+cd docs
+make html
+# Or on Windows
+make.bat html
+
+# View documentation
+open _build/html/index.html
 ```
+
+Documentation is built with Sphinx and hosted on Read the Docs.
 
 ### Commit Messages
 
@@ -121,10 +129,11 @@ Commit message format:
 
 Before submitting a PR, ensure:
 
-- All tests pass: pytest tests/
-- Code is formatted: black timesmith tests
-- Linting passes: flake8 timesmith tests
-- Documentation builds: mkdocs build
+- All tests pass: `pytest tests/`
+- Code is formatted: `black timesmith tests`
+- Linting passes: `ruff check timesmith tests`
+- Type checking (optional): `mypy timesmith`
+- Documentation builds: `cd docs && make html`
 - New features have tests
 - New features have documentation
 
@@ -142,19 +151,35 @@ Before submitting a PR, ensure:
 
 ```
 timesmith/
-├── timesmith/            # Main package
-│   ├── grdecl_parser.py    # GRDECL file parsing
-│   ├── unified_toolkit.py  # Main toolkit
-│   ├── model_gp.py         # GP models
-│   ├── plot.py             # Visualization
-│   ├── exceptions.py       # Custom exceptions
-│   ├── serialization.py    # Model persistence
-│   ├── cross_validation.py # Spatial CV
-│   └── parallel.py         # Parallel processing
+├── timesmith/              # Main package
+│   ├── __init__.py         # Package initialization and exports
+│   ├── __main__.py         # CLI entry point
+│   ├── exceptions.py       # Custom exception hierarchy
+│   ├── serialization.py    # Model save/load utilities
+│   ├── logging_config.py   # Logging configuration
+│   ├── core/               # Core base classes and utilities
+│   │   ├── base.py         # BaseObject, BaseEstimator, etc.
+│   │   ├── validate.py     # Input validation
+│   │   ├── data_validation.py  # Data quality checks
+│   │   └── ...
+│   ├── forecasters/        # Forecasting models
+│   ├── compose/            # Pipeline and composition utilities
+│   ├── eval/               # Evaluation and backtesting
+│   ├── tasks/              # Task definitions
+│   ├── typing/             # Type definitions and validators
+│   ├── network/            # Network analysis
+│   ├── utils/               # Utility functions
+│   └── examples/           # Example implementations
 ├── tests/                  # Test suite
-├── docs/                   # Documentation
-├── examples/               # Example scripts
-└── data/                   # Sample data
+│   ├── test_core_base.py
+│   ├── test_forecasters.py
+│   ├── test_pipelines.py
+│   ├── test_serialization.py
+│   └── ...
+├── docs/                   # Sphinx documentation
+│   └── source/
+├── examples/               # Example scripts and notebooks
+└── .github/                # GitHub workflows and configs
 ```
 
 ## Questions?

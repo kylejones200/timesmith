@@ -22,6 +22,8 @@ Start with the getting started guide. It shows the full path from raw series to 
    architecture
    design_decisions
    api_reference
+   troubleshooting
+   api_stability
 
 Indices and tables
 ==================

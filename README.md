@@ -1,7 +1,7 @@
 # TimeSmith
 
 [![PyPI version](https://badge.fury.io/py/timesmith.svg)](https://badge.fury.io/py/timesmith)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/kylejones200/timesmith/workflows/Tests/badge.svg)](https://github.com/kylejones200/timesmith/actions)
 [![Documentation](https://readthedocs.org/projects/timesmith/badge/?version=latest)](https://timesmith.readthedocs.io/)
@@ -105,6 +105,62 @@ black timesmith tests
 flake8 timesmith tests
 ```
 
+## Features
+
+- **Model Serialization**: Save and load fitted models
+- **Comprehensive Error Handling**: Custom exceptions with context
+- **Logging Configuration**: Centralized logging with environment variable support
+- **Data Validation**: Edge case handling and data quality checks
+- **Pipeline Composition**: Flexible transformer and forecaster pipelines
+- **Backtesting**: Time series cross-validation with multiple metrics
+- **Network Analysis**: Graph-based time series analysis
+- **Multiple Forecasters**: ARIMA, Prophet, LSTM, Bayesian, and more
+
+## Model Serialization
+
+```python
+from timesmith import SimpleMovingAverageForecaster, save_model, load_model
+
+# Fit and save
+forecaster = SimpleMovingAverageForecaster(window=5)
+forecaster.fit(y)
+save_model(forecaster, "model.pkl")
+
+# Load later
+loaded = load_model("model.pkl")
+forecast = loaded.predict(fh=10)
+```
+
+## Error Handling
+
+TimeSmith provides custom exceptions for better error handling:
+
+```python
+from timesmith import NotFittedError, DataError, ValidationError
+
+try:
+    forecaster.predict(fh=5)
+except NotFittedError as e:
+    print(f"Error: {e}")
+    print(f"Context: {e.context}")
+```
+
+## Logging
+
+Configure logging via environment variables:
+
+```bash
+export TIMESMITH_LOG_LEVEL=DEBUG
+export TIMESMITH_LOG_FORMAT=detailed
+```
+
+Or programmatically:
+
+```python
+from timesmith.logging_config import configure_logging
+configure_logging(level="INFO")
+```
+
 ## Design Principles
 
 1. **Strict Layer Boundaries**: Core cannot import eval. Typing cannot import anything.
@@ -112,3 +168,13 @@ flake8 timesmith tests
 3. **Task Semantics**: Tasks hold semantics. Estimators only store params and fitted state.
 4. **Composition**: Use pipelines and adapters for flexible workflows.
 5. **Type Safety**: Scientific types with runtime validators for data structures.
+
+## Requirements
+
+- Python 3.12 or higher
+- pandas >= 1.5.0
+- numpy >= 1.20.0
+- scipy >= 1.10.0
+- networkx >= 3.0
+
+See `pyproject.toml` for optional dependencies for specific forecasters.
