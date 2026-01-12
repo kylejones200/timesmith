@@ -1,4 +1,4 @@
-"""Native network construction algorithms (replacing ts2net dependency)."""
+"""Native network construction algorithms for time series."""
 
 import logging
 from typing import List, Optional, Tuple
