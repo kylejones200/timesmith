@@ -80,7 +80,7 @@ except ImportError:
 
 # Stationarity tests (optional statsmodels)
 try:
-    from timesmith.utils.stationarity import is_stationary, test_stationarity
+    from timesmith.utils.stationarity import is_stationary, test_stationarity  # noqa: F401
 
     HAS_STATIONARITY = True
 except ImportError:
@@ -89,26 +89,26 @@ except ImportError:
 # Climatology utilities (always available)
 # Autocorrelation utilities (always available)
 from timesmith.utils.autocorrelation import (
-    autocorrelation,
-    autocorrelation_plot_data,
-    partial_autocorrelation,
+    autocorrelation,  # noqa: F401
+    autocorrelation_plot_data,  # noqa: F401
+    partial_autocorrelation,  # noqa: F401
 )
 from timesmith.utils.climatology import (
-    compute_anomalies,
-    compute_climatology,
-    detect_extreme_events,
+    compute_anomalies,  # noqa: F401
+    compute_climatology,  # noqa: F401
+    detect_extreme_events,  # noqa: F401
 )
 
 # Confidence intervals (always available)
 from timesmith.utils.confidence_intervals import (
-    bootstrap_confidence_intervals,
-    parametric_confidence_intervals,
+    bootstrap_confidence_intervals,  # noqa: F401
+    parametric_confidence_intervals,  # noqa: F401
 )
 
 # Sequence creation utilities (always available)
 from timesmith.utils.sequences import (
-    create_sequences,
-    create_sequences_with_exog,
+    create_sequences,  # noqa: F401
+    create_sequences_with_exog,  # noqa: F401
 )
 
 __all__ = [

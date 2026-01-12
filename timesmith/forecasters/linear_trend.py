@@ -97,10 +97,9 @@ class LinearTrendForecaster(BaseForecaster):
         # Convert fh to integer
         if isinstance(fh, (int, np.integer)):
             n_steps = int(fh)
-            fh_arr = np.arange(1, n_steps + 1)
+            np.arange(1, n_steps + 1)
         elif isinstance(fh, (list, np.ndarray, pd.Index)):
             n_steps = len(fh)
-            fh_arr = np.asarray(fh)
         else:
             raise ValueError(f"Unsupported fh type: {type(fh)}")
 

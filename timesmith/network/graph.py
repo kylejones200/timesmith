@@ -14,7 +14,7 @@ try:
     from typing import TYPE_CHECKING
 
     if TYPE_CHECKING:
-        import networkx as nx
+        import networkx as nx  # noqa: F401
 except ImportError:
     pass
 

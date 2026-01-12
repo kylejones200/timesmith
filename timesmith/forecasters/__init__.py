@@ -14,7 +14,7 @@ from timesmith.forecasters.synthetic_control import SyntheticControlForecaster
 
 # Optional Prophet forecaster
 try:
-    from timesmith.forecasters.prophet import ProphetForecaster
+    from timesmith.forecasters.prophet import ProphetForecaster  # noqa: F401
 
     HAS_PROPHET = True
 except ImportError:
@@ -22,7 +22,7 @@ except ImportError:
 
 # Optional VAR forecaster
 try:
-    from timesmith.forecasters.var import VARForecaster
+    from timesmith.forecasters.var import VARForecaster  # noqa: F401
 
     HAS_VAR = True
 except ImportError:
@@ -30,7 +30,7 @@ except ImportError:
 
 # Optional LSTM forecaster
 try:
-    from timesmith.forecasters.lstm import LSTMForecaster
+    from timesmith.forecasters.lstm import LSTMForecaster  # noqa: F401
 
     HAS_LSTM = True
 except ImportError:
@@ -38,7 +38,7 @@ except ImportError:
 
 # Optional Kalman filter forecaster
 try:
-    from timesmith.forecasters.kalman import KalmanFilterForecaster
+    from timesmith.forecasters.kalman import KalmanFilterForecaster  # noqa: F401
 
     HAS_KALMAN = True
 except ImportError:
@@ -46,7 +46,7 @@ except ImportError:
 
 # Optional Bayesian forecaster
 try:
-    from timesmith.forecasters.bayesian import BayesianForecaster
+    from timesmith.forecasters.bayesian import BayesianForecaster  # noqa: F401
 
     HAS_BAYESIAN = True
 except ImportError:
@@ -54,7 +54,7 @@ except ImportError:
 
 # Optional Ensemble forecaster
 try:
-    from timesmith.forecasters.ensemble import EnsembleForecaster
+    from timesmith.forecasters.ensemble import EnsembleForecaster  # noqa: F401
 
     HAS_ENSEMBLE = True
 except ImportError:

@@ -249,7 +249,6 @@ class ProphetForecaster(BaseForecaster):
 
         # Calculate intervals based on coverage
         # Prophet provides yhat_lower and yhat_upper, but we need to adjust for coverage
-        alpha = 1 - coverage
         lower_col = "yhat_lower"
         upper_col = "yhat_upper"
 

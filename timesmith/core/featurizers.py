@@ -24,7 +24,8 @@ class LagFeaturizer(BaseFeaturizer):
     """Create lagged features from time series.
 
     Transforms SeriesLike to TableLike by creating lag features.
-    Supports automatic lead prevention, differences, percentage changes, and seasonal lags.
+    Supports automatic lead prevention, differences, percentage changes,
+    and seasonal lags.
     """
 
     def __init__(
@@ -41,7 +42,8 @@ class LagFeaturizer(BaseFeaturizer):
             lags: List of lag periods to create.
             include_diff: If True, include differenced features (lag differences).
             include_pct_change: If True, include percentage change features.
-            seasonal_lags: Optional list of seasonal lag periods (e.g., [12, 24] for monthly).
+            seasonal_lags: Optional list of seasonal lag periods
+                (e.g., [12, 24] for monthly).
             prevent_leads: If True, ensures no future data leakage (only positive lags).
         """
         # Filter out negative lags if prevent_leads is True
@@ -170,8 +172,10 @@ class RollingFeaturizer(BaseFeaturizer):
 
         Args:
             windows: List of window sizes.
-            functions: List of functions to apply ('mean', 'std', 'min', 'max', 'median').
-            n_jobs: Number of parallel jobs for computing statistics. None uses all CPUs.
+            functions: List of functions to apply
+                ('mean', 'std', 'min', 'max', 'median').
+            n_jobs: Number of parallel jobs for computing statistics.
+                None uses all CPUs.
         """
         self.windows = windows
         self.functions = functions
@@ -410,10 +414,12 @@ class SeasonalFeaturizer(BaseFeaturizer):
     Transforms SeriesLike to TableLike by creating seasonal sine/cosine features.
     """
 
-    def __init__(self, seasonal_periods: List[int] = [12, 365]):
+    def __init__(self, seasonal_periods: List[int]):
         """Initialize seasonal featurizer.
 
         Args:
+            seasonal_periods: List of seasonal periods
+                (e.g., [12, 365] for monthly/yearly).
             seasonal_periods: List of seasonal periods (e.g., [12, 365] for monthly/yearly).
         """
         self.seasonal_periods = seasonal_periods

@@ -41,9 +41,10 @@ jobs:
       - name: Lint with ruff (blocking - critical issues only)
         run: |
           # Check for critical issues (errors, not warnings)
-          ruff check timesmith/ tests/ --select E,F
-          # Format check (non-blocking for now, just warn)
-          ruff format --check timesmith/ tests/ || echo "Formatting issues found (will fix in separate PR)"
+          # E501 is ignored in pyproject.toml (line length handled by formatter)
+          ruff check timesmith/ tests/ --select E,F --ignore E501
+          # Format check (blocking)
+          ruff format --check timesmith/ tests/
 
       - name: Type check (non-blocking - informational only)
         continue-on-error: true

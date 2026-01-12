@@ -259,7 +259,6 @@ class VARForecaster(BaseForecaster):
         # VAR models don't provide built-in prediction intervals
         # We'll estimate them from residuals
         residuals = self.fitted_model_.resid
-        n_vars = len(self.column_names_)
 
         # Calculate standard errors for each variable
         std_errors = {}

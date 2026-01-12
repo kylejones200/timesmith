@@ -179,7 +179,8 @@ def detect_trend(y: SeriesLike, method: str = "linear") -> Dict[str, Any]:
 
     else:
         raise ValueError(
-            f"Unknown method: {method}. Use 'linear', 'theil_sen', 'polynomial', or 'moving_average'"
+            f"Unknown method: {method}. "
+            "Use 'linear', 'theil_sen', 'polynomial', or 'moving_average'"
         )
 
 
@@ -263,8 +264,10 @@ class DecomposeTransformer(BaseTransformer):
 
         Args:
             method: Decomposition method: 'moving_average' or 'stl'.
-            seasonal_period: Seasonal period (auto-detected if not specified).
-            trend_window: Window size for trend extraction (auto-determined if not specified).
+            seasonal_period: Seasonal period
+                (auto-detected if not specified).
+            trend_window: Window size for trend extraction
+                (auto-determined if not specified).
         """
         super().__init__()
         self.method = method
