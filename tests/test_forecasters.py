@@ -107,7 +107,7 @@ class TestSimpleMovingAverageForecaster:
         y = pd.Series(np.random.randn(5).cumsum(), index=dates)
 
         forecaster = SimpleMovingAverageForecaster(window=10)
-        
+
         # Window size larger than data length should raise ValueError
         with pytest.raises(ValueError, match="Window size.*cannot be larger than data length"):
             forecaster.fit(y)
