@@ -9,7 +9,7 @@ import pandas as pd
 from timesmith.exceptions import NotFittedError, UnsupportedOperationError
 
 if TYPE_CHECKING:
-    from timesmith.typing import ForecastLike, SeriesLike, TableLike
+    from timesmith.typing import SeriesLike, TableLike
 
 logger = logging.getLogger(__name__)
 
