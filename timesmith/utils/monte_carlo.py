@@ -140,8 +140,10 @@ def black_scholes_monte_carlo(
         # numpy doesn't have ppf, so we use Box-Muller transform approximation
         uniform = np.random.rand(forecast_days, n_simulations)
         # Approximate inverse normal using erf inverse approximation
-        random_shocks = np.sqrt(2) * np.sign(uniform - 0.5) * np.sqrt(
-            -np.log(1 - np.abs(2 * uniform - 1))
+        random_shocks = (
+            np.sqrt(2)
+            * np.sign(uniform - 0.5)
+            * np.sqrt(-np.log(1 - np.abs(2 * uniform - 1)))
         )
 
     # Calculate daily returns: exp(drift + stdev * random_shock)
