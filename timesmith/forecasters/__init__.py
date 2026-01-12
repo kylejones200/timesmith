@@ -12,14 +12,6 @@ from timesmith.forecasters.moving_average import (
 )
 from timesmith.forecasters.synthetic_control import SyntheticControlForecaster
 
-# Optional Prophet forecaster
-try:
-    from timesmith.forecasters.prophet import ProphetForecaster  # noqa: F401
-
-    HAS_PROPHET = True
-except ImportError:
-    HAS_PROPHET = False
-
 # Optional VAR forecaster
 try:
     from timesmith.forecasters.var import VARForecaster  # noqa: F401
@@ -71,9 +63,6 @@ __all__ = [
     "LinearTrendForecaster",
     "SyntheticControlForecaster",
 ]
-
-if HAS_PROPHET:
-    __all__.append("ProphetForecaster")
 
 if HAS_VAR:
     __all__.append("VARForecaster")

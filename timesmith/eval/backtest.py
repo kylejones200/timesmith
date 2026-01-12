@@ -1,7 +1,7 @@
 """Backtest functionality for forecasters."""
 
 import logging
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -12,7 +12,13 @@ from timesmith.eval.splitters import ExpandingWindowSplit
 from timesmith.results.backtest import BacktestResult
 from timesmith.tasks.forecast import ForecastTask
 
+if TYPE_CHECKING:
+    from timesmith.typing import SeriesLike, TableLike
+
 logger = logging.getLogger(__name__)
+
+# Constants
+DEFAULT_INITIAL_WINDOW_RATIO = 0.8  # 80% of data for initial training window
 
 
 def backtest_forecaster(
@@ -38,7 +44,7 @@ def backtest_forecaster(
     if splitter is None:
         # Default: use expanding window with initial window = 80% of data
         n = len(task.y)
-        initial_window = max(1, int(0.8 * n))
+        initial_window = max(1, int(DEFAULT_INITIAL_WINDOW_RATIO * n))
         splitter = ExpandingWindowSplit(initial_window=initial_window, fh=task.fh)
 
     results_rows = []
@@ -89,9 +95,20 @@ def backtest_forecaster(
                 metric_name = metric_func.__name__
                 metric_value = metric_func(y_test, y_pred)
                 metric_values[metric_name] = metric_value
+            except (ValueError, TypeError, AttributeError) as e:
+                # Specific exceptions for common metric computation errors
+                logger.warning(
+                    f"Error computing {metric_func.__name__}: {e}. "
+                    f"This may indicate a problem with the forecast alignment or data types."
+                )
+                metric_values[metric_name] = None
             except Exception as e:
-                logger.warning(f"Error computing {metric_func.__name__}: {e}")
-                metric_values[metric_func.__name__] = None
+                # Unexpected errors should be logged with full traceback
+                logger.error(
+                    f"Unexpected error computing {metric_func.__name__}: {e}",
+                    exc_info=True,
+                )
+                metric_values[metric_name] = None
 
         # Store results
         results_rows.append(
@@ -131,7 +148,10 @@ def backtest_forecaster(
     )
 
 
-def _align_predictions(y_pred: Any, y_test: Any) -> Any:
+def _align_predictions(
+    y_pred: Union[pd.Series, pd.DataFrame, np.ndarray],
+    y_test: Union[pd.Series, pd.DataFrame, np.ndarray],
+) -> np.ndarray:
     """Align predictions with test data.
 
     Args:
@@ -139,36 +159,45 @@ def _align_predictions(y_pred: Any, y_test: Any) -> Any:
         y_test: Test data.
 
     Returns:
-        Aligned predictions.
+        Aligned predictions as numpy array.
+
+    Raises:
+        ValueError: If prediction and test lengths are incompatible.
     """
-    import pandas as pd
+    # Get test length (handle both Series/DataFrame and arrays)
+    n_test = len(y_test)
 
-    if isinstance(y_pred, pd.Series) and isinstance(y_test, pd.Series):
-        # Try to align by index
-        if len(y_pred) == len(y_test):
-            return y_pred.values
-        elif len(y_pred) > len(y_test):
-            return y_pred.iloc[: len(y_test)].values
-        else:
-            # Pad with last value if needed
-            last_val = y_pred.iloc[-1]
-            padded = pd.Series([last_val] * (len(y_test) - len(y_pred)))
-            return pd.concat([y_pred, padded]).values
-
-    # Convert to array and take first len(y_test) values
-    if hasattr(y_pred, "values"):
-        y_pred = y_pred.values
+    # Convert predictions to numpy array
+    if isinstance(y_pred, pd.Series):
+        y_pred_array = y_pred.values
+    elif isinstance(y_pred, pd.DataFrame):
+        # Take first column if DataFrame
+        y_pred_array = (
+            y_pred.iloc[:, 0].values if y_pred.shape[1] > 0 else y_pred.values
+        )
+    elif hasattr(y_pred, "values"):
+        y_pred_array = y_pred.values
     elif hasattr(y_pred, "__array__"):
-        y_pred = y_pred.__array__()
-
-    if isinstance(y_test, pd.Series):
-        n = len(y_test)
+        y_pred_array = np.asarray(y_pred)
     else:
-        n = len(y_test)
+        y_pred_array = np.asarray(y_pred)
 
-    if len(y_pred) >= n:
-        return y_pred[:n]
+    n_pred = len(y_pred_array)
+
+    # Handle length mismatches
+    if n_pred == n_test:
+        return y_pred_array
+    elif n_pred > n_test:
+        # Truncate if predictions are longer
+        logger.warning(
+            f"Prediction length ({n_pred}) exceeds test length ({n_test}). "
+            f"Truncating predictions."
+        )
+        return y_pred_array[:n_test]
     else:
-        # Pad with last value
-        last_val = y_pred[-1]
-        return np.concatenate([y_pred, [last_val] * (n - len(y_pred))])
+        # Raise error if predictions are shorter (don't pad silently)
+        raise ValueError(
+            f"Prediction length ({n_pred}) is shorter than test length ({n_test}). "
+            f"This indicates a problem with the forecast horizon or model output. "
+            f"Expected {n_test} predictions, got {n_pred}."
+        )

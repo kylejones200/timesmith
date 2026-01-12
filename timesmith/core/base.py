@@ -2,9 +2,14 @@
 
 import copy
 import logging
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+
+import pandas as pd
 
 from timesmith.exceptions import NotFittedError, UnsupportedOperationError
+
+if TYPE_CHECKING:
+    from timesmith.typing import ForecastLike, SeriesLike, TableLike
 
 logger = logging.getLogger(__name__)
 
@@ -42,12 +47,22 @@ class BaseObject:
 
         Returns:
             Self for method chaining.
+
+        Raises:
+            ValueError: If parameter name is invalid or is a private attribute.
         """
+        valid_params = self.get_params(deep=False)
         for key, value in params.items():
-            if not hasattr(self, key):
+            # Prevent setting private attributes (starting with _)
+            if key.startswith("_"):
+                raise ValueError(
+                    f"Cannot set private attribute '{key}' for {self.__class__.__name__}. "
+                    f"Private attributes (starting with '_') are not configurable parameters."
+                )
+            if key not in valid_params:
                 raise ValueError(
                     f"Invalid parameter {key} for {self.__class__.__name__}. "
-                    f"Valid parameters are: {list(self.get_params(deep=False).keys())}"
+                    f"Valid parameters are: {list(valid_params.keys())}"
                 )
             setattr(self, key, value)
         return self
@@ -115,35 +130,44 @@ class BaseTransformer(BaseEstimator):
     Transformers modify data but don't predict future values.
     """
 
-    def transform(self, y: Any, X: Optional[Any] = None) -> Any:
+    def transform(
+        self, y: Union["SeriesLike", Any], X: Optional[Union["TableLike", Any]] = None
+    ) -> Union["SeriesLike", Any]:
         """Transform the data.
 
         Args:
-            y: Target data to transform.
-            X: Optional exogenous/feature data.
+            y: Target data to transform (SeriesLike).
+            X: Optional exogenous/feature data (TableLike).
 
         Returns:
-            Transformed data.
+            Transformed data (SeriesLike).
         """
         self._check_is_fitted()
         raise NotImplementedError("Subclasses must implement transform")
 
-    def inverse_transform(self, y: Any, X: Optional[Any] = None) -> Any:
+    def inverse_transform(
+        self, y: Union["SeriesLike", Any], X: Optional[Union["TableLike", Any]] = None
+    ) -> Union["SeriesLike", Any]:
         """Inverse transform the data.
 
         Args:
-            y: Transformed data to inverse transform.
-            X: Optional exogenous/feature data.
+            y: Transformed data to inverse transform (SeriesLike).
+            X: Optional exogenous/feature data (TableLike).
 
         Returns:
-            Inverse transformed data.
+            Inverse transformed data (SeriesLike).
         """
         self._check_is_fitted()
         raise NotImplementedError(
             f"{self.__class__.__name__} does not support inverse_transform"
         )
 
-    def fit_transform(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> Any:
+    def fit_transform(
+        self,
+        y: Union["SeriesLike", Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
+    ) -> Union["SeriesLike", Any]:
         """Fit the transformer and transform the data.
 
         Args:
@@ -162,6 +186,68 @@ class BaseForecaster(BaseEstimator):
 
     Forecasters predict future values of time series.
     """
+
+    def _parse_forecast_horizon(self, fh: Any) -> int:
+        """Parse forecast horizon to integer number of periods.
+
+        Args:
+            fh: Forecast horizon (can be integer, array, or other format).
+
+        Returns:
+            Number of periods to forecast.
+        """
+        import numpy as np
+
+        if isinstance(fh, (list, tuple)) or hasattr(fh, "__len__"):
+            # Check if it's a numpy array or list-like
+            if hasattr(fh, "shape"):  # numpy array
+                return len(fh)
+            elif isinstance(fh, (list, tuple)):
+                return len(fh)
+            else:
+                return len(fh)
+        elif isinstance(fh, int):
+            return fh
+        else:
+            return int(fh)
+
+    def _create_forecast_index(
+        self, train_index: Any, n_periods: int
+    ) -> pd.DatetimeIndex:
+        """Create forecast index based on training data frequency.
+
+        Args:
+            train_index: Training data index (DatetimeIndex or similar).
+            n_periods: Number of periods to forecast.
+
+        Returns:
+            Forecast index (DatetimeIndex).
+        """
+        from timesmith.utils.ts_utils import detect_frequency
+
+        last_date = pd.Timestamp(train_index[-1])
+        freq = detect_frequency(pd.Series(index=train_index))
+
+        if isinstance(freq, str):
+            next_date = last_date + pd.tseries.frequencies.to_offset(freq)
+            forecast_index = pd.date_range(
+                start=next_date, periods=n_periods, freq=freq
+            )
+        else:
+            # Fallback: estimate from spacing
+            if len(train_index) > 1:
+                avg_delta = train_index[-1] - train_index[-2]
+                next_date = last_date + avg_delta
+                forecast_index = pd.date_range(
+                    start=next_date, periods=n_periods, freq=avg_delta
+                )
+            else:
+                # Default to daily if only one data point
+                forecast_index = pd.date_range(
+                    start=last_date, periods=n_periods + 1, freq="D"
+                )[1:]
+
+        return forecast_index
 
     def predict(self, fh: Any, X: Optional[Any] = None, **predict_params: Any) -> Any:
         """Make forecasts.
@@ -241,12 +327,14 @@ class BaseFeaturizer(BaseTransformer):
     Featurizers are transformers that output TableLike data.
     """
 
-    def transform(self, y: Any, X: Optional[Any] = None) -> Any:
+    def transform(
+        self, y: Union["SeriesLike", Any], X: Optional[Union["TableLike", Any]] = None
+    ) -> "TableLike":
         """Transform data to table format.
 
         Args:
-            y: Target data to transform.
-            X: Optional exogenous/feature data.
+            y: Target data to transform (SeriesLike).
+            X: Optional exogenous/feature data (TableLike).
 
         Returns:
             TableLike data (DataFrame with time-aligned rows).

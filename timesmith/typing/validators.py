@@ -56,13 +56,20 @@ def is_panel(data: object) -> bool:
         return True
 
     # Regular DataFrame with entity column
-    # This is a heuristic - we check if there's a common entity column name
-    entity_cols = ["entity", "id", "group", "key"]
+    # More conservative: require explicit entity column names (not just "id")
+    # "id" is too common and doesn't guarantee panel structure
+    entity_cols = ["entity", "group", "key"]  # Removed "id" - too broad
     if any(col in data.columns for col in entity_cols):
-        return True
+        # Additional check: ensure it's not just a regular time series
+        # A panel should have entity column AND multiple columns OR MultiIndex
+        if data.shape[1] > 1 or isinstance(index, pd.MultiIndex):
+            return True
 
     # If index is DatetimeIndex and has multiple columns, assume panel
+    # But be more conservative: require at least 2 columns
     if isinstance(index, pd.DatetimeIndex) and data.shape[1] > 1:
+        # Additional sanity check: make sure it's not just a wide time series
+        # Panels typically have both entity and time dimensions
         return True
 
     return False

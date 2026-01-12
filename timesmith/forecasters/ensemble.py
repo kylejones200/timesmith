@@ -92,7 +92,10 @@ class EnsembleForecaster(BaseForecaster):
         )
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union["SeriesLike", Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "EnsembleForecaster":
         """Fit ensemble models on training data.
 
@@ -152,7 +155,10 @@ class EnsembleForecaster(BaseForecaster):
         return self
 
     def predict(
-        self, fh: Any, X: Optional[Any] = None, **predict_params: Any
+        self,
+        fh: Union[int, list, Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **predict_params: Any,
     ) -> Forecast:
         """Generate forecasts.
 

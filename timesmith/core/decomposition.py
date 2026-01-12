@@ -4,7 +4,7 @@ Provides trend and seasonality detection and removal for time series analysis.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -12,6 +12,9 @@ import pandas as pd
 from timesmith.core.base import BaseTransformer
 from timesmith.core.tags import set_tags
 from timesmith.typing import SeriesLike
+
+if TYPE_CHECKING:
+    from timesmith.typing import TableLike
 
 logger = logging.getLogger(__name__)
 
@@ -286,7 +289,10 @@ class DecomposeTransformer(BaseTransformer):
         )
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union[SeriesLike, Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "DecomposeTransformer":
         """Fit the decomposition transformer.
 
@@ -443,7 +449,10 @@ class DetrendTransformer(BaseTransformer):
         )
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union[SeriesLike, Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "DetrendTransformer":
         """Fit the detrend transformer.
 
@@ -535,7 +544,10 @@ class DeseasonalizeTransformer(BaseTransformer):
         )
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union[SeriesLike, Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "DeseasonalizeTransformer":
         """Fit the deseasonalize transformer.
 

@@ -71,5 +71,3 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # Master document
 master_doc = "index"
-
-

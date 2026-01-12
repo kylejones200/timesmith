@@ -1,15 +1,19 @@
 """Moving average forecaster implementations."""
 
 import logging
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 
 from timesmith.core.base import BaseForecaster
 from timesmith.core.tags import set_tags
+from timesmith.exceptions import DataError
 from timesmith.results.forecast import Forecast
-from timesmith.utils.ts_utils import detect_frequency, ensure_datetime_index
+from timesmith.utils.ts_utils import ensure_datetime_index
+
+if TYPE_CHECKING:
+    from timesmith.typing import SeriesLike, TableLike
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +43,10 @@ class SimpleMovingAverageForecaster(BaseForecaster):
         )
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union["SeriesLike", Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "SimpleMovingAverageForecaster":
         """Fit the forecaster (computes moving average).
 
@@ -59,14 +66,46 @@ class SimpleMovingAverageForecaster(BaseForecaster):
             raise ValueError("y must be SeriesLike (Series or single-column DataFrame)")
 
         series = ensure_datetime_index(series)
+
+        # Validate data
+        if len(series) == 0:
+            raise DataError("Input series cannot be empty")
+
+        # Check for window size
+        if self.window > len(series):
+            raise ValueError(
+                f"Window size ({self.window}) cannot be larger than data length ({len(series)})"
+            )
+
+        if self.window < 1:
+            raise ValueError(f"Window size must be at least 1, got {self.window}")
+
         self.train_index_ = series.index
-        self.last_ma_value_ = series.rolling(window=self.window).mean().iloc[-1]
+        rolling_mean = series.rolling(window=self.window).mean()
+        self.last_ma_value_ = rolling_mean.iloc[-1]
+
+        # Check if result is NaN (e.g., all NaN values in window)
+        if pd.isna(self.last_ma_value_):
+            # Try to use available data
+            valid_values = series.dropna()
+            if len(valid_values) == 0:
+                raise DataError(
+                    "All values in input series are NaN. Cannot compute moving average."
+                )
+            self.last_ma_value_ = valid_values.mean()
+            logger.warning(
+                f"Moving average resulted in NaN (possibly due to missing values). "
+                f"Using mean of available data ({self.last_ma_value_}) instead."
+            )
 
         self._is_fitted = True
         return self
 
     def predict(
-        self, fh: Any, X: Optional[Any] = None, **predict_params: Any
+        self,
+        fh: Union[int, list, Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **predict_params: Any,
     ) -> Forecast:
         """Generate forecast.
 
@@ -80,34 +119,9 @@ class SimpleMovingAverageForecaster(BaseForecaster):
         """
         self._check_is_fitted()
 
-        # Convert fh to integer
-        if isinstance(fh, (list, np.ndarray)):
-            n_periods = len(fh)
-        elif isinstance(fh, int):
-            n_periods = fh
-        else:
-            n_periods = int(fh)
-
-        # Create forecast index
-        last_date = pd.Timestamp(self.train_index_[-1])
-        freq = detect_frequency(pd.Series(index=self.train_index_))
-
-        if isinstance(freq, str):
-            next_date = last_date + pd.tseries.frequencies.to_offset(freq)
-            forecast_index = pd.date_range(
-                start=next_date, periods=n_periods, freq=freq
-            )
-        else:
-            if len(self.train_index_) > 1:
-                avg_delta = self.train_index_[-1] - self.train_index_[-2]
-                next_date = last_date + avg_delta
-                forecast_index = pd.date_range(
-                    start=next_date, periods=n_periods, freq=avg_delta
-                )
-            else:
-                forecast_index = pd.date_range(
-                    start=last_date, periods=n_periods + 1, freq="D"
-                )[1:]
+        # Parse forecast horizon and create index
+        n_periods = self._parse_forecast_horizon(fh)
+        forecast_index = self._create_forecast_index(self.train_index_, n_periods)
 
         # Forecast is constant (last MA value)
         y_pred = pd.Series([self.last_ma_value_] * n_periods, index=forecast_index)
@@ -160,16 +174,40 @@ class ExponentialMovingAverageForecaster(BaseForecaster):
             raise ValueError("y must be SeriesLike (Series or single-column DataFrame)")
 
         series = ensure_datetime_index(series)
+
+        # Validate data
+        if len(series) == 0:
+            raise DataError("Input series cannot be empty")
+
+        # Validate alpha parameter
+        if not (0 < self.alpha <= 1):
+            raise ValueError(f"Alpha must be in range (0, 1], got {self.alpha}")
+
         self.train_index_ = series.index
-        self.last_ema_value_ = (
-            series.ewm(alpha=self.alpha, adjust=False).mean().iloc[-1]
-        )
+        ema_result = series.ewm(alpha=self.alpha, adjust=False).mean()
+        self.last_ema_value_ = ema_result.iloc[-1]
+
+        # Check if result is NaN
+        if pd.isna(self.last_ema_value_):
+            valid_values = series.dropna()
+            if len(valid_values) == 0:
+                raise DataError(
+                    "All values in input series are NaN. Cannot compute exponential moving average."
+                )
+            self.last_ema_value_ = valid_values.mean()
+            logger.warning(
+                f"Exponential moving average resulted in NaN. "
+                f"Using mean of available data ({self.last_ema_value_}) instead."
+            )
 
         self._is_fitted = True
         return self
 
     def predict(
-        self, fh: Any, X: Optional[Any] = None, **predict_params: Any
+        self,
+        fh: Union[int, list, Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **predict_params: Any,
     ) -> Forecast:
         """Generate forecast.
 
@@ -183,34 +221,9 @@ class ExponentialMovingAverageForecaster(BaseForecaster):
         """
         self._check_is_fitted()
 
-        # Convert fh to integer
-        if isinstance(fh, (list, np.ndarray)):
-            n_periods = len(fh)
-        elif isinstance(fh, int):
-            n_periods = fh
-        else:
-            n_periods = int(fh)
-
-        # Create forecast index
-        last_date = pd.Timestamp(self.train_index_[-1])
-        freq = detect_frequency(pd.Series(index=self.train_index_))
-
-        if isinstance(freq, str):
-            next_date = last_date + pd.tseries.frequencies.to_offset(freq)
-            forecast_index = pd.date_range(
-                start=next_date, periods=n_periods, freq=freq
-            )
-        else:
-            if len(self.train_index_) > 1:
-                avg_delta = self.train_index_[-1] - self.train_index_[-2]
-                next_date = last_date + avg_delta
-                forecast_index = pd.date_range(
-                    start=next_date, periods=n_periods, freq=avg_delta
-                )
-            else:
-                forecast_index = pd.date_range(
-                    start=last_date, periods=n_periods + 1, freq="D"
-                )[1:]
+        # Parse forecast horizon and create index
+        n_periods = self._parse_forecast_horizon(fh)
+        forecast_index = self._create_forecast_index(self.train_index_, n_periods)
 
         # Forecast is constant (last EMA value)
         y_pred = pd.Series([self.last_ema_value_] * n_periods, index=forecast_index)
@@ -265,17 +278,57 @@ class WeightedMovingAverageForecaster(BaseForecaster):
             raise ValueError("y must be SeriesLike (Series or single-column DataFrame)")
 
         series = ensure_datetime_index(series)
+
+        # Validate data
+        if len(series) == 0:
+            raise DataError("Input series cannot be empty")
+
+        # Validate window size
+        if self.window > len(series):
+            raise ValueError(
+                f"Window size ({self.window}) cannot be larger than data length ({len(series)})"
+            )
+
+        if self.window < 1:
+            raise ValueError(f"Window size must be at least 1, got {self.window}")
+
+        # Validate weights
+        if len(self.weights) != self.window:
+            raise ValueError(
+                f"Number of weights ({len(self.weights)}) must match window size ({self.window})"
+            )
+
         self.train_index_ = series.index
 
         # Compute weighted moving average
         last_window = series.iloc[-self.window :].values
-        self.last_wma_value_ = np.dot(last_window, self.weights)
+
+        # Check for NaN values in window
+        if np.any(np.isnan(last_window)):
+            valid_mask = ~np.isnan(last_window)
+            if not np.any(valid_mask):
+                raise DataError(
+                    "All values in the last window are NaN. Cannot compute weighted moving average."
+                )
+            # Use only valid values and adjust weights proportionally
+            valid_values = last_window[valid_mask]
+            valid_weights = np.array(self.weights)[valid_mask]
+            valid_weights = valid_weights / valid_weights.sum()  # Normalize
+            self.last_wma_value_ = np.dot(valid_values, valid_weights)
+            logger.warning(
+                f"NaN values found in window. Using weighted average of {len(valid_values)} valid values."
+            )
+        else:
+            self.last_wma_value_ = np.dot(last_window, self.weights)
 
         self._is_fitted = True
         return self
 
     def predict(
-        self, fh: Any, X: Optional[Any] = None, **predict_params: Any
+        self,
+        fh: Union[int, list, Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **predict_params: Any,
     ) -> Forecast:
         """Generate forecast.
 
@@ -289,34 +342,9 @@ class WeightedMovingAverageForecaster(BaseForecaster):
         """
         self._check_is_fitted()
 
-        # Convert fh to integer
-        if isinstance(fh, (list, np.ndarray)):
-            n_periods = len(fh)
-        elif isinstance(fh, int):
-            n_periods = fh
-        else:
-            n_periods = int(fh)
-
-        # Create forecast index
-        last_date = pd.Timestamp(self.train_index_[-1])
-        freq = detect_frequency(pd.Series(index=self.train_index_))
-
-        if isinstance(freq, str):
-            next_date = last_date + pd.tseries.frequencies.to_offset(freq)
-            forecast_index = pd.date_range(
-                start=next_date, periods=n_periods, freq=freq
-            )
-        else:
-            if len(self.train_index_) > 1:
-                avg_delta = self.train_index_[-1] - self.train_index_[-2]
-                next_date = last_date + avg_delta
-                forecast_index = pd.date_range(
-                    start=next_date, periods=n_periods, freq=avg_delta
-                )
-            else:
-                forecast_index = pd.date_range(
-                    start=last_date, periods=n_periods + 1, freq="D"
-                )[1:]
+        # Parse forecast horizon and create index
+        n_periods = self._parse_forecast_horizon(fh)
+        forecast_index = self._create_forecast_index(self.train_index_, n_periods)
 
         # Forecast is constant (last WMA value)
         y_pred = pd.Series([self.last_wma_value_] * n_periods, index=forecast_index)

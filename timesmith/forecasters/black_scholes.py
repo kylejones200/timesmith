@@ -70,7 +70,10 @@ class BlackScholesMonteCarloForecaster(BaseForecaster):
         )
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union["SeriesLike", Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "BlackScholesMonteCarloForecaster":
         """Fit the forecaster to historical data.
 
@@ -99,7 +102,10 @@ class BlackScholesMonteCarloForecaster(BaseForecaster):
         return self
 
     def predict(
-        self, fh: Any, X: Optional[Any] = None, **predict_params: Any
+        self,
+        fh: Union[int, list, Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **predict_params: Any,
     ) -> Forecast:
         """Generate forecast using Black-Scholes Monte Carlo simulation.
 

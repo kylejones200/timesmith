@@ -25,7 +25,6 @@ dependencies = [
 forecasters = [
   "pmdarima>=2.0.0,<3.0.0",  # For ARIMAForecaster
   "statsmodels>=0.14.0,<1.0.0",  # For ExponentialSmoothingForecaster, VARForecaster, and stationarity tests
-  "prophet>=1.1.0,<2.0.0",  # For ProphetForecaster
 ]
 deep_learning = [
   "darts>=0.28.0,<1.0.0",  # For LSTMForecaster and other deep learning models
@@ -95,7 +94,6 @@ all = [
   "arviz>=0.15.0",
   "scikit-learn>=1.0.0",
   "PyWavelets>=1.4.0",
-  "prophet>=1.1.0",
   "darts>=0.28.0",
   "filterpy>=1.4.5",
   "pandas-datareader>=0.10.0",

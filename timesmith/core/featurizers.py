@@ -1,7 +1,7 @@
 """Featurizer implementations for time series feature engineering."""
 
 import logging
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -16,6 +16,9 @@ from timesmith.utils.rolling import (
     rolling_std,
 )
 from timesmith.utils.ts_utils import ensure_datetime_index
+
+if TYPE_CHECKING:
+    from timesmith.typing import SeriesLike, TableLike
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +71,10 @@ class LagFeaturizer(BaseFeaturizer):
         )
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union["SeriesLike", Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "LagFeaturizer":
         """Fit the featurizer (no-op for lags).
 

@@ -1,7 +1,7 @@
 """Kalman filter forecaster implementation."""
 
 import logging
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -10,6 +10,9 @@ from timesmith.core.base import BaseForecaster
 from timesmith.core.tags import set_tags
 from timesmith.results.forecast import Forecast
 from timesmith.utils.ts_utils import ensure_datetime_index
+
+if TYPE_CHECKING:
+    from timesmith.typing import SeriesLike, TableLike
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +129,10 @@ class KalmanFilterForecaster(BaseForecaster):
         return kf
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union["SeriesLike", Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "KalmanFilterForecaster":
         """Fit Kalman filter to data.
 
@@ -174,7 +180,10 @@ class KalmanFilterForecaster(BaseForecaster):
         return self
 
     def predict(
-        self, fh: Any, X: Optional[Any] = None, **predict_params: Any
+        self,
+        fh: Union[int, list, Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **predict_params: Any,
     ) -> Forecast:
         """Generate forecast.
 

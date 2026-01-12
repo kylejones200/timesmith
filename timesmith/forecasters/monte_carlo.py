@@ -56,7 +56,10 @@ class MonteCarloForecaster(BaseForecaster):
         )
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union["SeriesLike", Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "MonteCarloForecaster":
         """Fit the base forecaster.
 
@@ -82,7 +85,10 @@ class MonteCarloForecaster(BaseForecaster):
         return self
 
     def predict(
-        self, fh: Any, X: Optional[Any] = None, **predict_params: Any
+        self,
+        fh: Union[int, list, Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **predict_params: Any,
     ) -> Forecast:
         """Generate ensemble forecast with uncertainty.
 

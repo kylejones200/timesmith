@@ -1,13 +1,16 @@
 """Transformer implementations for time series preprocessing."""
 
 import logging
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import pandas as pd
 
 from timesmith.core.base import BaseTransformer
 from timesmith.core.tags import set_tags
 from timesmith.utils.ts_utils import detect_frequency, ensure_datetime_index
+
+if TYPE_CHECKING:
+    from timesmith.typing import SeriesLike, TableLike
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +37,10 @@ class OutlierRemover(BaseTransformer):
         )
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union["SeriesLike", Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "OutlierRemover":
         """Fit the transformer (computes IQR bounds).
 
@@ -63,7 +69,9 @@ class OutlierRemover(BaseTransformer):
         self._is_fitted = True
         return self
 
-    def transform(self, y: Any, X: Optional[Any] = None) -> Any:
+    def transform(
+        self, y: Union["SeriesLike", Any], X: Optional[Union["TableLike", Any]] = None
+    ) -> Union["SeriesLike", Any]:
         """Remove outliers.
 
         Args:
@@ -123,7 +131,9 @@ class MissingValueFiller(BaseTransformer):
         self._is_fitted = True
         return self
 
-    def transform(self, y: Any, X: Optional[Any] = None) -> Any:
+    def transform(
+        self, y: Union["SeriesLike", Any], X: Optional[Union["TableLike", Any]] = None
+    ) -> Union["SeriesLike", Any]:
         """Fill missing values.
 
         Args:
@@ -190,7 +200,9 @@ class Resampler(BaseTransformer):
         self._is_fitted = True
         return self
 
-    def transform(self, y: Any, X: Optional[Any] = None) -> Any:
+    def transform(
+        self, y: Union["SeriesLike", Any], X: Optional[Union["TableLike", Any]] = None
+    ) -> Union["SeriesLike", Any]:
         """Resample time series.
 
         Args:
@@ -273,7 +285,9 @@ class MissingDateFiller(BaseTransformer):
         self._is_fitted = True
         return self
 
-    def transform(self, y: Any, X: Optional[Any] = None) -> Any:
+    def transform(
+        self, y: Union["SeriesLike", Any], X: Optional[Union["TableLike", Any]] = None
+    ) -> Union["SeriesLike", Any]:
         """Fill missing dates.
 
         Args:

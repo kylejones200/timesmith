@@ -1,9 +1,13 @@
 """Pipeline for transformer then forecaster."""
 
 import logging
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from timesmith.core.base import BaseForecaster, BaseTransformer
+from timesmith.results.forecast import Forecast
+
+if TYPE_CHECKING:
+    from timesmith.typing import SeriesLike, TableLike
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +47,10 @@ class ForecasterPipeline(BaseForecaster):
             )
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union["SeriesLike", Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "ForecasterPipeline":
         """Fit all transformers then the forecaster.
 
@@ -71,7 +78,12 @@ class ForecasterPipeline(BaseForecaster):
         self._is_fitted = True
         return self
 
-    def predict(self, fh: Any, X: Optional[Any] = None, **predict_params: Any) -> Any:
+    def predict(
+        self,
+        fh: Union[int, list, Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **predict_params: Any,
+    ) -> Forecast:
         """Make forecasts through the pipeline.
 
         Args:
@@ -99,11 +111,11 @@ class ForecasterPipeline(BaseForecaster):
 
     def predict_interval(
         self,
-        fh: Any,
-        X: Optional[Any] = None,
+        fh: Union[int, list, Any],
+        X: Optional[Union["TableLike", Any]] = None,
         coverage: float = 0.9,
         **predict_params: Any,
-    ) -> Any:
+    ) -> Forecast:
         """Make forecasts with intervals through the pipeline.
 
         Args:

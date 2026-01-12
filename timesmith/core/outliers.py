@@ -1,13 +1,16 @@
 """Advanced outlier detection transformers for time series."""
 
 import logging
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 import pandas as pd
 
 from timesmith.core.base import BaseTransformer
 from timesmith.core.tags import set_tags
+
+if TYPE_CHECKING:
+    from timesmith.typing import SeriesLike, TableLike
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +54,10 @@ class HampelOutlierRemover(BaseTransformer):
         )
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union["SeriesLike", Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "HampelOutlierRemover":
         """Fit the transformer (computes outlier mask).
 

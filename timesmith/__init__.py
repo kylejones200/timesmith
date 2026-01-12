@@ -221,13 +221,6 @@ from timesmith.forecasters import (  # noqa: E402
 
 # Optional forecasters
 try:
-    from timesmith.forecasters.prophet import ProphetForecaster  # noqa: F401
-
-    HAS_PROPHET = True
-except ImportError:
-    HAS_PROPHET = False
-
-try:
     from timesmith.forecasters.var import VARForecaster  # noqa: F401
 
     HAS_VAR = True
@@ -432,8 +425,6 @@ if HAS_BAYESIAN:
 if HAS_ENSEMBLE:
     __all__.append("EnsembleForecaster")
 
-if HAS_PROPHET:
-    __all__.append("ProphetForecaster")
 
 if HAS_VAR:
     __all__.append("VARForecaster")

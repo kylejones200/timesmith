@@ -1,9 +1,12 @@
 """Pipeline for chaining transformers."""
 
 import logging
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from timesmith.core.base import BaseEstimator, BaseTransformer
+
+if TYPE_CHECKING:
+    from timesmith.typing import SeriesLike, TableLike
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +38,12 @@ class Pipeline(BaseEstimator):
                     f"got {type(step).__name__}"
                 )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "Pipeline":
+    def fit(
+        self,
+        y: Union["SeriesLike", Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
+    ) -> "Pipeline":
         """Fit all steps in the pipeline.
 
         Args:
@@ -58,7 +66,9 @@ class Pipeline(BaseEstimator):
         self._is_fitted = True
         return self
 
-    def transform(self, y: Any, X: Optional[Any] = None) -> Any:
+    def transform(
+        self, y: Union["SeriesLike", Any], X: Optional[Union["TableLike", Any]] = None
+    ) -> Union["SeriesLike", Any]:
         """Transform data through all steps.
 
         Args:
@@ -80,7 +90,9 @@ class Pipeline(BaseEstimator):
 
         return yt
 
-    def inverse_transform(self, y: Any, X: Optional[Any] = None) -> Any:
+    def inverse_transform(
+        self, y: Union["SeriesLike", Any], X: Optional[Union["TableLike", Any]] = None
+    ) -> Union["SeriesLike", Any]:
         """Inverse transform data through all steps in reverse.
 
         Args:

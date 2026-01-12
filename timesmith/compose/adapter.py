@@ -1,9 +1,14 @@
 """Adapter objects that convert between scitypes."""
 
 import logging
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
+
+import pandas as pd
 
 from timesmith.core.base import BaseTransformer
+
+if TYPE_CHECKING:
+    from timesmith.typing import SeriesLike, TableLike
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +53,10 @@ class SeriesToTableAdapter(Adapter):
         self.window_size = window_size
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union["SeriesLike", Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "SeriesToTableAdapter":
         """Fit the adapter (no-op for this simple version).
 
@@ -63,7 +71,9 @@ class SeriesToTableAdapter(Adapter):
         self._is_fitted = True
         return self
 
-    def transform(self, y: Any, X: Optional[Any] = None) -> Any:
+    def transform(
+        self, y: Union["SeriesLike", Any], X: Optional[Union["TableLike", Any]] = None
+    ) -> "TableLike":
         """Convert Series to Table using rolling window features.
 
         Args:
@@ -74,7 +84,6 @@ class SeriesToTableAdapter(Adapter):
             TableLike data with window features.
         """
         self._check_is_fitted()
-        import pandas as pd
 
         # Simplified: just convert Series to DataFrame
         if isinstance(y, pd.Series):
@@ -89,7 +98,10 @@ class TableToSeriesAdapter(Adapter):
     """
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union["SeriesLike", "TableLike", Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "TableToSeriesAdapter":
         """Fit the adapter (no-op for this simple version).
 
@@ -104,7 +116,9 @@ class TableToSeriesAdapter(Adapter):
         self._is_fitted = True
         return self
 
-    def transform(self, y: Any, X: Optional[Any] = None) -> Any:
+    def transform(
+        self, y: Union["TableLike", Any], X: Optional[Union["TableLike", Any]] = None
+    ) -> Union["SeriesLike", Any]:
         """Convert Table to Series by selecting first column or aggregating.
 
         Args:
@@ -115,7 +129,6 @@ class TableToSeriesAdapter(Adapter):
             SeriesLike data.
         """
         self._check_is_fitted()
-        import pandas as pd
 
         # Simplified: take first column if DataFrame
         if isinstance(y, pd.DataFrame):

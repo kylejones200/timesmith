@@ -1,11 +1,14 @@
 """FeatureUnion for running multiple featurizers and concatenating results."""
 
 import logging
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 import pandas as pd
 
 from timesmith.core.base import BaseFeaturizer
+
+if TYPE_CHECKING:
+    from timesmith.typing import SeriesLike, TableLike
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +38,12 @@ class FeatureUnion(BaseFeaturizer):
                     f"got {type(featurizer).__name__}"
                 )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "FeatureUnion":
+    def fit(
+        self,
+        y: Union["SeriesLike", Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
+    ) -> "FeatureUnion":
         """Fit all featurizers.
 
         Args:

@@ -9,11 +9,11 @@ Installation Issues
 Problem: Import errors for optional dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you see import errors for forecasters like ``ProphetForecaster`` or ``LSTMForecaster``, you need to install the optional dependencies:
+If you see import errors for forecasters like ``LSTMForecaster``, you need to install the optional dependencies:
 
 .. code-block:: bash
 
-   # For Prophet
+   # For optional forecasters
    pip install timesmith[forecasters]
 
    # For LSTM
@@ -275,4 +275,5 @@ Common Error Messages
 - ``DataError``: Check data quality (NaN, length, etc.)
 - ``ConfigurationError``: Check parameter values
 - ``UnsupportedOperationError``: Operation not available for this estimator
+
 

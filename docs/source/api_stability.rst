@@ -86,3 +86,4 @@ If you encounter breaking changes in a non-major version update, please report i
 - GitHub Issues: https://github.com/kylejones200/timesmith/issues
 - Email: kyletjones@gmail.com
 
+

@@ -1,7 +1,7 @@
 """Change point detection for time series."""
 
 import logging
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -9,6 +9,9 @@ import pandas as pd
 from timesmith.core.base import BaseDetector
 from timesmith.core.tags import set_tags
 from timesmith.typing import SeriesLike
+
+if TYPE_CHECKING:
+    from timesmith.typing import TableLike
 
 logger = logging.getLogger(__name__)
 
@@ -232,7 +235,12 @@ class PELTDetector(BaseDetector):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "PELTDetector":
+    def fit(
+        self,
+        y: Union[SeriesLike, Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
+    ) -> "PELTDetector":
         """Fit the change point detector.
 
         Args:
@@ -353,7 +361,10 @@ class BayesianChangePointDetector(BaseDetector):
         )
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union[SeriesLike, Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "BayesianChangePointDetector":
         """Fit the change point detector.
 
@@ -467,7 +478,10 @@ class CUSUMDetector(BaseDetector):
         )
 
     def fit(
-        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+        self,
+        y: Union[SeriesLike, Any],
+        X: Optional[Union["TableLike", Any]] = None,
+        **fit_params: Any,
     ) -> "CUSUMDetector":
         """Fit the change point detector.
 

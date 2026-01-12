@@ -114,9 +114,10 @@ flake8 timesmith tests
 - **Pipeline Composition**: Flexible transformer and forecaster pipelines
 - **Backtesting**: Time series cross-validation with multiple metrics
 - **Network Analysis**: Graph-based time series analysis
-- **Multiple Forecasters**: ARIMA, Prophet, LSTM, Bayesian, and more
+- **Multiple Forecasters**: ARIMA, LSTM, Bayesian, and more
 
 ## Model Serialization
+
 
 ```python
 from timesmith import SimpleMovingAverageForecaster, save_model, load_model
