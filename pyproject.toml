@@ -63,7 +63,7 @@ wavelet = [
 ]
 data_loaders = [
   "pandas-datareader>=0.10.0,<1.0.0",  # For FRED data loader
-  "yfinance>=0.2.0,<1.0.0",  # For Yahoo Finance data loader
+  "yfinance>=0.2.0,<2.0.0",  # For Yahoo Finance data loader
 ]
 dev = [
   "pytest>=7.0",
