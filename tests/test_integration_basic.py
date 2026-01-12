@@ -85,7 +85,8 @@ class TestBasicForecastWorkflow:
 
         # Check results
         assert result is not None
-        assert len(result.folds) > 0
+        assert hasattr(result, "results")
+        assert len(result.results) > 0
 
         # Summarize
         summary = summarize_backtest(result)

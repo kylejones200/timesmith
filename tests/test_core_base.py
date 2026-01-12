@@ -81,13 +81,14 @@ class TestBaseEstimator:
 
     def test_check_is_fitted(self):
         """Test _check_is_fitted raises error when not fitted."""
+        from timesmith.exceptions import NotFittedError
 
         class TestEstimator(BaseEstimator):
             def predict(self):
                 self._check_is_fitted()
 
         est = TestEstimator()
-        with pytest.raises(ValueError, match="not fitted"):
+        with pytest.raises(NotFittedError, match="not fitted"):
             est.predict()
 
 

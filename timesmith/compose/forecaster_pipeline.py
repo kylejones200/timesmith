@@ -23,6 +23,7 @@ class ForecasterPipeline(BaseForecaster):
             steps: List of (name, transformer) tuples.
             forecaster: Final forecaster step.
         """
+        super().__init__()  # Initialize BaseForecaster (sets _is_fitted=False)
         self.steps = steps
         self.forecaster = forecaster
         self._validate_steps()
