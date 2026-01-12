@@ -2,6 +2,19 @@
 
 __version__ = "0.1.1"
 
+# Exceptions
+from timesmith.exceptions import (
+    ConfigurationError,
+    DataError,
+    ForecastError,
+    NotFittedError,
+    PipelineError,
+    TimeSmithError,
+    TransformError,
+    UnsupportedOperationError,
+    ValidationError,
+)
+
 # Typing
 from timesmith.typing import (
     ForecastLike,
@@ -95,10 +108,17 @@ from timesmith.utils import (
 
 # Optional stationarity tests
 try:
-    from timesmith.utils.stationarity import test_stationarity
+    from timesmith.utils.stationarity import test_stationarity, is_stationary
     HAS_STATIONARITY = True
 except ImportError:
     HAS_STATIONARITY = False
+
+# Optional data loaders
+try:
+    from timesmith.datasets import load_fred, load_yahoo
+    HAS_DATA_LOADERS = True
+except ImportError:
+    HAS_DATA_LOADERS = False
 
 # Optional plotting utilities (requires plotsmith)
 HAS_PLOTTING = False
@@ -194,6 +214,31 @@ from timesmith.forecasters import (
     WeightedMovingAverageForecaster,
 )
 
+# Optional forecasters
+try:
+    from timesmith.forecasters.prophet import ProphetForecaster
+    HAS_PROPHET = True
+except ImportError:
+    HAS_PROPHET = False
+
+try:
+    from timesmith.forecasters.var import VARForecaster
+    HAS_VAR = True
+except ImportError:
+    HAS_VAR = False
+
+try:
+    from timesmith.forecasters.lstm import LSTMForecaster
+    HAS_LSTM = True
+except ImportError:
+    HAS_LSTM = False
+
+try:
+    from timesmith.forecasters.kalman import KalmanFilterForecaster
+    HAS_KALMAN = True
+except ImportError:
+    HAS_KALMAN = False
+
 # Optional Bayesian forecaster
 try:
     from timesmith.forecasters.bayesian import BayesianForecaster
@@ -209,6 +254,16 @@ except ImportError:
     HAS_ENSEMBLE = False
 
 __all__ = [
+    # Exceptions
+    "TimeSmithError",
+    "ValidationError",
+    "DataError",
+    "ForecastError",
+    "TransformError",
+    "PipelineError",
+    "ConfigurationError",
+    "NotFittedError",
+    "UnsupportedOperationError",
     # Typing
     "SeriesLike",
     "PanelLike",
@@ -261,6 +316,7 @@ __all__ = [
     "ensure_datetime_index",
     "resample_ts",
     "split_ts",
+    "train_test_split",
     "detect_frequency",
     "fill_missing_dates",
     "remove_outliers_iqr",
@@ -358,9 +414,24 @@ if HAS_BAYESIAN:
 if HAS_ENSEMBLE:
     __all__.append("EnsembleForecaster")
 
+if HAS_PROPHET:
+    __all__.append("ProphetForecaster")
+
+if HAS_VAR:
+    __all__.append("VARForecaster")
+
+if HAS_LSTM:
+    __all__.append("LSTMForecaster")
+
+if HAS_KALMAN:
+    __all__.append("KalmanFilterForecaster")
+
 if HAS_FILTERS:
     __all__.extend(["ButterworthFilter", "SavitzkyGolayFilter"])
 
 if HAS_STATIONARITY:
-    __all__.append("test_stationarity")
+    __all__.extend(["test_stationarity", "is_stationary"])
+
+if HAS_DATA_LOADERS:
+    __all__.extend(["load_fred", "load_yahoo"])
 

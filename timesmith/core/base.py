@@ -4,6 +4,8 @@ import copy
 import logging
 from typing import Any, Dict, Optional
 
+from timesmith.exceptions import NotFittedError, UnsupportedOperationError
+
 logger = logging.getLogger(__name__)
 
 
@@ -102,10 +104,7 @@ class BaseEstimator(BaseObject):
     def _check_is_fitted(self) -> None:
         """Check if estimator is fitted, raise error if not."""
         if not self.is_fitted:
-            raise ValueError(
-                f"This {self.__class__.__name__} instance is not fitted yet. "
-                "Call 'fit' before using this estimator."
-            )
+            raise NotFittedError(self.__class__.__name__)
 
 
 class BaseTransformer(BaseEstimator):
@@ -193,8 +192,8 @@ class BaseForecaster(BaseEstimator):
             Forecast results with intervals (ForecastLike with y_int).
         """
         self._check_is_fitted()
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not support predict_interval"
+        raise UnsupportedOperationError(
+            "predict_interval", self.__class__.__name__
         )
 
 

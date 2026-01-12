@@ -7,6 +7,7 @@ Do not validate inside inner loops.
 import logging
 from typing import Any, Optional
 
+from timesmith.exceptions import ValidationError
 from timesmith.typing.validators import assert_panel, assert_series, assert_table
 
 logger = logging.getLogger(__name__)
@@ -32,19 +33,30 @@ def validate_input(
     """
     if data is None:
         if not allow_none:
-            raise ValueError(f"{name} cannot be None")
+            raise ValidationError(
+                f"{name} cannot be None",
+                context={"name": name, "scitype": scitype, "allow_none": allow_none},
+            )
         return
 
     scitype = scitype.lower()
-    if scitype == "serieslike":
-        assert_series(data, name=name)
-    elif scitype == "panellike":
-        assert_panel(data, name=name)
-    elif scitype == "tablelike":
-        assert_table(data, name=name)
-    else:
-        raise ValueError(
-            f"Unknown scitype: {scitype}. Must be one of "
-            "'SeriesLike', 'PanelLike', 'TableLike'"
-        )
+    try:
+        if scitype == "serieslike":
+            assert_series(data, name=name)
+        elif scitype == "panellike":
+            assert_panel(data, name=name)
+        elif scitype == "tablelike":
+            assert_table(data, name=name)
+        else:
+            raise ValidationError(
+                f"Unknown scitype: {scitype}. Must be one of "
+                "'SeriesLike', 'PanelLike', 'TableLike'",
+                context={"name": name, "scitype": scitype},
+            )
+    except (TypeError, ValueError) as e:
+        # Wrap validation errors from validators with context
+        raise ValidationError(
+            str(e),
+            context={"name": name, "scitype": scitype, "original_error": type(e).__name__},
+        ) from e
 

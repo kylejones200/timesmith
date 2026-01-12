@@ -17,39 +17,53 @@ maintainers = [
 
 requires-python = ">=3.9"
 dependencies = [
-  "pandas>=1.5.0",
-  "numpy>=1.20.0",
-  "scipy>=1.10.0",
-  "networkx>=3.0",
+  "pandas>=1.5.0,<3.0.0",  # Major version upper bound for stability
+  "numpy>=1.20.0,<3.0.0",  # Major version upper bound for stability
+  "scipy>=1.10.0,<2.0.0",  # Major version upper bound for stability
+  "networkx>=3.0,<4.0.0",  # Major version upper bound for stability
 ]
 
 [project.optional-dependencies]
 forecasters = [
-  "pmdarima>=2.0.0",  # For ARIMAForecaster
-  "statsmodels>=0.14.0",  # For ExponentialSmoothingForecaster
+  "pmdarima>=2.0.0,<3.0.0",  # For ARIMAForecaster
+  "statsmodels>=0.14.0,<1.0.0",  # For ExponentialSmoothingForecaster and VARForecaster
+  "prophet>=1.1.0,<2.0.0",  # For ProphetForecaster
+]
+deep_learning = [
+  "darts>=0.28.0,<1.0.0",  # For LSTMForecaster and other deep learning models
+]
+kalman = [
+  "filterpy>=1.4.5,<2.0.0",  # For KalmanFilterForecaster
 ]
 network = [
   # networkx is now a core dependency
-  "numba>=0.57.0",  # Optional: JIT compilation for faster network construction
+  "numba>=0.57.0,<1.0.0",  # Optional: JIT compilation for faster network construction
 ]
 distances = [
-  "tslearn>=0.6.0",  # For optimized DTW distance (optional)
+  "tslearn>=0.6.0,<1.0.0",  # For optimized DTW distance (optional)
 ]
 changepoint = [
-  "ruptures>=1.1.0",  # For PELT change point detection
+  "ruptures>=1.1.0,<2.0.0",  # For PELT change point detection
 ]
 bayesian = [
-  "pymc>=5.0.0",  # For Bayesian forecasting
-  "arviz>=0.15.0",  # For Bayesian diagnostics and visualization
+  "pymc>=5.0.0,<6.0.0",  # For Bayesian forecasting
+  "arviz>=0.15.0,<1.0.0",  # For Bayesian diagnostics and visualization
 ]
 ensemble = [
-  "scikit-learn>=1.0.0",  # For ensemble forecasting (classification + regression)
+  "scikit-learn>=1.0.0,<2.0.0",  # For ensemble forecasting (classification + regression)
+]
+performance = [
+  "joblib>=1.0.0,<2.0.0",  # For parallel processing of rolling statistics
 ]
 statsmodels = [
-  "statsmodels>=0.14.0",  # For stationarity tests and advanced time series analysis
+  "statsmodels>=0.14.0,<1.0.0",  # For stationarity tests and advanced time series analysis
 ]
 wavelet = [
-  "PyWavelets>=1.4.0",  # For wavelet-based denoising and anomaly detection
+  "PyWavelets>=1.4.0,<2.0.0",  # For wavelet-based denoising and anomaly detection
+]
+data_loaders = [
+  "pandas-datareader>=0.10.0,<1.0.0",  # For FRED data loader
+  "yfinance>=0.2.0,<1.0.0",  # For Yahoo Finance data loader
 ]
 dev = [
   "pytest>=7.0",
@@ -83,6 +97,12 @@ all = [
   "arviz>=0.15.0",
   "scikit-learn>=1.0.0",
   "PyWavelets>=1.4.0",
+  "prophet>=1.1.0",
+  "darts>=0.28.0",
+  "filterpy>=1.4.5",
+  "pandas-datareader>=0.10.0",
+  "yfinance>=0.2.0",
+  "joblib>=1.0.0",
   "plotsmith>=0.1.0",
   "anomsmith>=0.1.0",
   "pytest>=7.0",
@@ -171,6 +191,8 @@ addopts = [
   "--cov=timesmith",
   "--cov-report=term-missing",
   "--cov-report=html",
+  "--cov-report=xml",
+  "--cov-fail-under=30",  # Reasonable threshold - will increase gradually
   "--disable-warnings",
   "--durations=10",
   "--maxfail=5",
