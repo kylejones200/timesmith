@@ -15,6 +15,9 @@ from timesmith.exceptions import (
     ValidationError,
 )
 
+# Serialization
+from timesmith.serialization import load_model, save_model
+
 # Typing
 from timesmith.typing import (
     ForecastLike,
@@ -394,6 +397,9 @@ __all__ = [
     "dtw_distance",
     "euclidean_distance",
     "manhattan_distance",
+    # Serialization
+    "save_model",
+    "load_model",
 ]
 
 # Conditionally add plotting functions
