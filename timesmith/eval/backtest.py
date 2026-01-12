@@ -1,7 +1,7 @@
 """Backtest functionality for forecasters."""
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -11,9 +11,6 @@ from timesmith.eval.metrics import mae, mape, rmse
 from timesmith.eval.splitters import ExpandingWindowSplit
 from timesmith.results.backtest import BacktestResult
 from timesmith.tasks.forecast import ForecastTask
-
-if TYPE_CHECKING:
-    from timesmith.typing import SeriesLike, TableLike
 
 logger = logging.getLogger(__name__)
 
