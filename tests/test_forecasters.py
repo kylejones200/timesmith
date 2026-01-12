@@ -102,16 +102,12 @@ class TestSimpleMovingAverageForecaster:
         assert len(forecast.y_pred) == 2
 
     def test_window_larger_than_data(self):
-        """Test behavior when window is larger than data."""
+        """Test that ValueError is raised when window is larger than data."""
         dates = pd.date_range("2020-01-01", periods=5, freq="D")
         y = pd.Series(np.random.randn(5).cumsum(), index=dates)
 
         forecaster = SimpleMovingAverageForecaster(window=10)
-        forecaster.fit(y)
-        forecast = forecaster.predict(fh=2)
-
-        # When window > data length, rolling mean may return NaN
-        # This is expected behavior - use smaller window or more data
-        assert len(forecast.y_pred) == 2
-        # Check that we get a result (may be NaN if insufficient data)
-        assert forecast.y_pred is not None
+        
+        # Window size larger than data length should raise ValueError
+        with pytest.raises(ValueError, match="Window size.*cannot be larger than data length"):
+            forecaster.fit(y)
