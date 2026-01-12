@@ -5,13 +5,25 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize
 
 from timesmith.core.base import BaseForecaster
 from timesmith.core.tags import set_tags
 from timesmith.results.forecast import Forecast
 
 logger = logging.getLogger(__name__)
+
+# Optional scipy for optimization
+try:
+    from scipy.optimize import minimize
+
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
+    minimize = None
+    logger.warning(
+        "scipy not installed. SyntheticControlForecaster requires scipy. "
+        "Install with: pip install scipy or pip install timesmith[scipy]"
+    )
 
 
 class SyntheticControlForecaster(BaseForecaster):
@@ -137,6 +149,12 @@ class SyntheticControlForecaster(BaseForecaster):
         def objective(weights: np.ndarray) -> float:
             synthetic = control_pre @ weights
             return float(np.sum((treated_pre - synthetic) ** 2))
+
+        if not HAS_SCIPY or minimize is None:
+            raise ImportError(
+                "SyntheticControlForecaster requires scipy for optimization. "
+                "Install with: pip install scipy or pip install timesmith[scipy]"
+            )
 
         # Constraints: weights sum to 1, each weight between 0 and 1
         constraints = {"type": "eq", "fun": lambda w: np.sum(w) - 1}

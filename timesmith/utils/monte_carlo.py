@@ -5,11 +5,23 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from scipy.stats import norm
 
 from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
+
+# Optional scipy for norm.ppf
+try:
+    from scipy.stats import norm
+
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
+    norm = None
+    logger.warning(
+        "scipy not installed. black_scholes_monte_carlo will use numpy fallback. "
+        "Install with: pip install scipy or pip install timesmith[scipy]"
+    )
 
 # Optional matplotlib import
 try:
@@ -120,8 +132,17 @@ def black_scholes_monte_carlo(
     S0 = historical_data.iloc[-1]
 
     # Generate random shocks for all simulations and all time steps
-    # Using inverse normal CDF (ppf) for better distribution properties
-    random_shocks = norm.ppf(np.random.rand(forecast_days, n_simulations))
+    # Using inverse normal CDF (ppf) for better distribution properties if scipy available
+    if HAS_SCIPY and norm is not None:
+        random_shocks = norm.ppf(np.random.rand(forecast_days, n_simulations))
+    else:
+        # Fallback: use numpy's inverse normal approximation
+        # numpy doesn't have ppf, so we use Box-Muller transform approximation
+        uniform = np.random.rand(forecast_days, n_simulations)
+        # Approximate inverse normal using erf inverse approximation
+        random_shocks = np.sqrt(2) * np.sign(uniform - 0.5) * np.sqrt(
+            -np.log(1 - np.abs(2 * uniform - 1))
+        )
 
     # Calculate daily returns: exp(drift + stdev * random_shock)
     daily_returns = np.exp(drift + stdev * random_shocks)

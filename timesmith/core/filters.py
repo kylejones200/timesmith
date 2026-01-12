@@ -5,7 +5,6 @@ from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
-from scipy import signal
 
 from timesmith.core.base import BaseTransformer
 from timesmith.core.tags import set_tags
@@ -14,14 +13,18 @@ logger = logging.getLogger(__name__)
 
 # Optional scipy for advanced filters
 try:
+    from scipy import signal
     from scipy.signal import butter, filtfilt
 
     SCIPY_AVAILABLE = True
 except ImportError:
     SCIPY_AVAILABLE = False
+    signal = None
+    butter = None
+    filtfilt = None
     logger.warning(
         "scipy not available. Advanced filters will use basic methods. "
-        "Install with: pip install scipy"
+        "Install with: pip install scipy or pip install timesmith[scipy]"
     )
 
 

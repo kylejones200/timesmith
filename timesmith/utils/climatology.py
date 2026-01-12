@@ -5,11 +5,23 @@ from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
+
+# Optional scipy for statistical functions
+try:
+    from scipy import stats
+
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
+    stats = None
+    logger.warning(
+        "scipy not installed. Some climatology functions will have limited functionality. "
+        "Install with: pip install scipy or pip install timesmith[scipy]"
+    )
 
 
 def compute_climatology(
@@ -211,6 +223,14 @@ def detect_extreme_events(
                     "severity": float((dry_threshold - value) / series_clean.std()),
                     "percentile": float(
                         stats.percentileofscore(series_clean.values, value)
+                        if HAS_SCIPY and stats is not None
+                        else (
+                            float(
+                                (series_clean.values < value).sum()
+                                / len(series_clean.values)
+                                * 100
+                            )
+                        )
                     ),
                 }
             )
@@ -223,6 +243,14 @@ def detect_extreme_events(
                     "severity": float((value - wet_threshold) / series_clean.std()),
                     "percentile": float(
                         stats.percentileofscore(series_clean.values, value)
+                        if HAS_SCIPY and stats is not None
+                        else (
+                            float(
+                                (series_clean.values < value).sum()
+                                / len(series_clean.values)
+                                * 100
+                            )
+                        )
                     ),
                 }
             )
