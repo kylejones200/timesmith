@@ -1,7 +1,7 @@
 """Monte Carlo ensemble forecasting with uncertainty quantification."""
 
 import logging
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -9,6 +9,9 @@ import pandas as pd
 from timesmith.core.base import BaseForecaster
 from timesmith.core.tags import set_tags
 from timesmith.results.forecast import Forecast
+
+if TYPE_CHECKING:
+    from timesmith.typing import SeriesLike, TableLike
 
 logger = logging.getLogger(__name__)
 
