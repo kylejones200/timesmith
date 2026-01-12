@@ -9,6 +9,13 @@ import pandas as pd
 from timesmith.core.base import BaseFeaturizer
 from timesmith.core.tags import set_tags
 from timesmith.utils.ts_utils import ensure_datetime_index
+from timesmith.utils.rolling import (
+    rolling_mean,
+    rolling_std,
+    rolling_min,
+    rolling_max,
+    rolling_median,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,15 +24,41 @@ class LagFeaturizer(BaseFeaturizer):
     """Create lagged features from time series.
 
     Transforms SeriesLike to TableLike by creating lag features.
+    Supports automatic lead prevention, differences, percentage changes, and seasonal lags.
     """
 
-    def __init__(self, lags: List[int] = [1, 2, 3, 7, 14]):
+    def __init__(
+        self,
+        lags: List[int] = [1, 2, 3, 7, 14],
+        include_diff: bool = False,
+        include_pct_change: bool = False,
+        seasonal_lags: Optional[List[int]] = None,
+        prevent_leads: bool = True,
+    ):
         """Initialize lag featurizer.
 
         Args:
             lags: List of lag periods to create.
+            include_diff: If True, include differenced features (lag differences).
+            include_pct_change: If True, include percentage change features.
+            seasonal_lags: Optional list of seasonal lag periods (e.g., [12, 24] for monthly).
+            prevent_leads: If True, ensures no future data leakage (only positive lags).
         """
-        self.lags = lags
+        # Filter out negative lags if prevent_leads is True
+        if prevent_leads:
+            self.lags = [lag for lag in lags if lag > 0]
+            if len(self.lags) < len(lags):
+                logger.warning(
+                    f"Filtered out non-positive lags. Using: {self.lags}"
+                )
+        else:
+            self.lags = lags
+
+        self.include_diff = include_diff
+        self.include_pct_change = include_pct_change
+        self.seasonal_lags = seasonal_lags or []
+        self.prevent_leads = prevent_leads
+
         set_tags(
             self,
             scitype_input="SeriesLike",
@@ -49,7 +82,7 @@ class LagFeaturizer(BaseFeaturizer):
         return self
 
     def transform(self, y: Any, X: Optional[Any] = None) -> pd.DataFrame:
-        """Create lag features.
+        """Create lag features using vectorized NumPy operations.
 
         Args:
             y: SeriesLike data.
@@ -62,16 +95,64 @@ class LagFeaturizer(BaseFeaturizer):
 
         if isinstance(y, pd.Series):
             series = y
+            index = y.index
         elif isinstance(y, pd.DataFrame) and y.shape[1] == 1:
             series = y.iloc[:, 0]
+            index = y.index
         else:
             raise ValueError("y must be SeriesLike (Series or single-column DataFrame)")
 
-        df = pd.DataFrame({"value": series})
-
+        # Convert to numpy array for vectorized operations
+        values = np.asarray(series, dtype=np.float64)
+        n = len(values)
+        
+        # Pre-allocate result dictionary for all features
+        feature_dict = {"value": values}
+        
+        # Vectorized lag features using numpy roll
+        all_lags = list(self.lags) + list(self.seasonal_lags)
+        max_lag = max(all_lags) if all_lags else 0
+        
+        # Standard lag features - vectorized
         for lag in self.lags:
-            df[f"lag_{lag}"] = series.shift(lag)
+            lagged = np.full(n, np.nan, dtype=np.float64)
+            lagged[lag:] = values[:-lag] if lag > 0 else values
+            feature_dict[f"lag_{lag}"] = lagged
 
+        # Difference features - vectorized
+        if self.include_diff:
+            for lag in self.lags:
+                if lag > 0:
+                    diff_values = np.full(n, np.nan, dtype=np.float64)
+                    diff_values[lag:] = values[lag:] - values[:-lag]
+                    feature_dict[f"diff_{lag}"] = diff_values
+
+        # Percentage change features - vectorized
+        if self.include_pct_change:
+            for lag in self.lags:
+                if lag > 0:
+                    pct_values = np.full(n, np.nan, dtype=np.float64)
+                    prev_values = values[:-lag]
+                    curr_values = values[lag:]
+                    # Avoid division by zero
+                    mask = prev_values != 0
+                    pct_values[lag:][mask] = (curr_values[mask] - prev_values[mask]) / prev_values[mask]
+                    feature_dict[f"pct_change_{lag}"] = pct_values
+
+        # Seasonal lag features - vectorized
+        for seasonal_lag in self.seasonal_lags:
+            if seasonal_lag > 0 or not self.prevent_leads:
+                lagged = np.full(n, np.nan, dtype=np.float64)
+                if seasonal_lag > 0:
+                    lagged[seasonal_lag:] = values[:-seasonal_lag]
+                elif seasonal_lag < 0:
+                    lagged[:seasonal_lag] = values[-seasonal_lag:]
+                else:
+                    lagged = values.copy()
+                feature_dict[f"seasonal_lag_{seasonal_lag}"] = lagged
+
+        # Create DataFrame from dictionary (faster than column-by-column)
+        df = pd.DataFrame(feature_dict, index=index)
         return df
 
 
@@ -85,15 +166,18 @@ class RollingFeaturizer(BaseFeaturizer):
         self,
         windows: List[int] = [7, 14, 30],
         functions: List[str] = ["mean", "std"],
+        n_jobs: Optional[int] = None,
     ):
         """Initialize rolling featurizer.
 
         Args:
             windows: List of window sizes.
             functions: List of functions to apply ('mean', 'std', 'min', 'max', 'median').
+            n_jobs: Number of parallel jobs for computing statistics. None uses all CPUs.
         """
         self.windows = windows
         self.functions = functions
+        self.n_jobs = n_jobs
         set_tags(
             self,
             scitype_input="SeriesLike",
@@ -117,7 +201,7 @@ class RollingFeaturizer(BaseFeaturizer):
         return self
 
     def transform(self, y: Any, X: Optional[Any] = None) -> pd.DataFrame:
-        """Create rolling features.
+        """Create rolling features using optimized NumPy vectorized operations.
 
         Args:
             y: SeriesLike data.
@@ -130,28 +214,53 @@ class RollingFeaturizer(BaseFeaturizer):
 
         if isinstance(y, pd.Series):
             series = y
+            index = y.index
         elif isinstance(y, pd.DataFrame) and y.shape[1] == 1:
             series = y.iloc[:, 0]
+            index = y.index
         else:
             raise ValueError("y must be SeriesLike (Series or single-column DataFrame)")
 
-        df = pd.DataFrame({"value": series})
+        # Convert to numpy array for vectorized operations
+        values = np.asarray(series, dtype=np.float64)
+        
+        # Pre-allocate result dictionary
+        feature_dict = {"value": values}
+        
+        # Use parallelized rolling statistics if many windows/functions
+        from timesmith.utils.rolling import rolling_statistics
+        if len(self.windows) * len(self.functions) > 4:
+            rolling_results = rolling_statistics(
+                values, self.windows, self.functions, n_jobs=self.n_jobs
+            )
+            for key, result in rolling_results.items():
+                # Fill NaN with 0 for std (matching pandas behavior)
+                if key.startswith("rolling_std_"):
+                    result = np.nan_to_num(result, nan=0.0)
+                feature_dict[key] = result
+        else:
+            # Small number of operations - use direct calls
+            function_map = {
+                "mean": rolling_mean,
+                "std": rolling_std,
+                "min": rolling_min,
+                "max": rolling_max,
+                "median": rolling_median,
+            }
+            for window in self.windows:
+                for func in self.functions:
+                    if func not in function_map:
+                        logger.warning(f"Unknown function {func}, skipping")
+                        continue
+                    rolling_func = function_map[func]
+                    result = rolling_func(values, window, min_periods=1)
+                    # Fill NaN with 0 for std (matching pandas behavior)
+                    if func == "std":
+                        result = np.nan_to_num(result, nan=0.0)
+                    feature_dict[f"rolling_{func}_{window}"] = result
 
-        function_map = {
-            "mean": lambda d, w: d.rolling(w, min_periods=1).mean(),
-            "std": lambda d, w: d.rolling(w, min_periods=1).std().fillna(0),
-            "min": lambda d, w: d.rolling(w, min_periods=1).min(),
-            "max": lambda d, w: d.rolling(w, min_periods=1).max(),
-            "median": lambda d, w: d.rolling(w, min_periods=1).median(),
-        }
-
-        for window in self.windows:
-            for func in self.functions:
-                if func not in function_map:
-                    logger.warning(f"Unknown function {func}, skipping")
-                    continue
-                df[f"rolling_{func}_{window}"] = function_map[func](series, window)
-
+        # Create DataFrame from dictionary (faster than column-by-column)
+        df = pd.DataFrame(feature_dict, index=index)
         return df
 
 

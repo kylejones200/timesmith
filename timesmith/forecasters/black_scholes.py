@@ -234,3 +234,4 @@ class BlackScholesMonteCarloForecaster(BaseForecaster):
 
         return forecast
 
+

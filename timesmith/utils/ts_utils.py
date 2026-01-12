@@ -134,6 +134,42 @@ def split_ts(
         return (data.iloc[:train_size], data.iloc[train_size:])
 
 
+def train_test_split(
+    data: Union[pd.Series, pd.DataFrame],
+    test_size: Union[float, int] = 0.2,
+    train_size: Optional[Union[float, int]] = None,
+    method: str = "time",
+) -> Tuple[Union[pd.Series, pd.DataFrame], Union[pd.Series, pd.DataFrame]]:
+    """Split time series into train and test sets (time-aware split).
+
+    This is a convenience function for time series cross-validation that ensures
+    temporal ordering is preserved (no shuffling).
+
+    Args:
+        data: Time series data (Series or DataFrame).
+        test_size: If float: proportion of data for testing (0.0 to 1.0).
+            If int: number of observations for testing.
+        train_size: If float: proportion of data for training.
+            If int: number of observations for training.
+            If provided, test_size is ignored.
+        method: Split method. Currently only 'time' is supported (temporal split).
+
+    Returns:
+        Tuple of (train_data, test_data).
+
+    Example:
+        >>> train, test = ts.train_test_split(data, test_size=0.2, method='time')
+    """
+    if method != "time":
+        raise ValueError(
+            f"Method '{method}' not supported. Only 'time' method is available "
+            "for time series splitting."
+        )
+
+    # Use split_ts with test_size converted appropriately
+    return split_ts(data, train_size=train_size, test_size=test_size)
+
+
 def detect_frequency(data: pd.Series) -> str:
     """Detect the frequency of a time series.
 

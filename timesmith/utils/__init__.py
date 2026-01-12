@@ -9,6 +9,7 @@ from timesmith.utils.ts_utils import (
     remove_outliers_iqr,
     resample_ts,
     split_ts,
+    train_test_split,
 )
 from timesmith.utils.distances import (
     correlation_distance,
@@ -70,7 +71,7 @@ except ImportError:
 
 # Stationarity tests (optional statsmodels)
 try:
-    from timesmith.utils.stationarity import test_stationarity
+    from timesmith.utils.stationarity import test_stationarity, is_stationary
     HAS_STATIONARITY = True
 except ImportError:
     HAS_STATIONARITY = False
@@ -107,6 +108,7 @@ __all__ = [
     "ensure_datetime_index",
     "resample_ts",
     "split_ts",
+    "train_test_split",
     "detect_frequency",
     "fill_missing_dates",
     "remove_outliers_iqr",
@@ -126,7 +128,7 @@ __all__ = [
 
 # Conditionally add stationarity tests
 if HAS_STATIONARITY:
-    __all__.append("test_stationarity")
+    __all__.extend(["test_stationarity", "is_stationary"])
 
 # Climatology utilities
 __all__.extend([

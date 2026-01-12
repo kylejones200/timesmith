@@ -79,16 +79,15 @@ class HampelOutlierRemover(BaseTransformer):
         if len(self.y_) < self.window:
             raise ValueError(f"Need at least {self.window} data points")
 
-        # Compute rolling median (center=False to avoid future data leakage)
-        rolling_median = (
-            pd.Series(self.y_)
-            .rolling(window=self.window, center=False)
-            .median()
-            .fillna(pd.Series(self.y_).median())
-        )
+        # Compute rolling median using optimized NumPy (center=False to avoid future data leakage)
+        from timesmith.utils.rolling import rolling_median
+        rolling_median_arr = rolling_median(self.y_, self.window, min_periods=1)
+        # Fill NaN with global median
+        global_median = np.nanmedian(self.y_)
+        rolling_median_arr = np.nan_to_num(rolling_median_arr, nan=global_median)
 
         # Compute residuals
-        residuals = self.y_ - rolling_median.values
+        residuals = self.y_ - rolling_median_arr
 
         # Compute MAD (Median Absolute Deviation)
         mad = np.median(np.abs(residuals - np.median(residuals)))
@@ -319,13 +318,12 @@ class ZScoreOutlierRemover(BaseTransformer):
         if len(self.y_) < self.window:
             raise ValueError(f"Need at least {self.window} data points")
 
-        # Compute baseline (center=False to avoid future data leakage)
-        rolling_median = (
-            pd.Series(self.y_)
-            .rolling(window=self.window, center=False)
-            .median()
-            .fillna(pd.Series(self.y_).median())
-        )
+        # Compute baseline using optimized NumPy (center=False to avoid future data leakage)
+        from timesmith.utils.rolling import rolling_median
+        rolling_median_arr = rolling_median(self.y_, self.window, min_periods=1)
+        # Fill NaN with global median
+        global_median = np.nanmedian(self.y_)
+        rolling_median_arr = np.nan_to_num(rolling_median_arr, nan=global_median)
 
         # Compute residuals
         if self.use_log:
@@ -333,11 +331,11 @@ class ZScoreOutlierRemover(BaseTransformer):
             rates_positive = np.maximum(
                 self.y_, self.y_[self.y_ > 0].min() if (self.y_ > 0).any() else 1.0
             )
-            baseline_positive = np.maximum(rolling_median.values, 1.0)
+            baseline_positive = np.maximum(rolling_median_arr, 1.0)
             residuals = np.log(rates_positive) - np.log(baseline_positive)
         else:
             # Use linear residual (additive)
-            residuals = self.y_ - rolling_median.values
+            residuals = self.y_ - rolling_median_arr
 
         # Compute Z-scores
         residual_mean = np.mean(residuals)

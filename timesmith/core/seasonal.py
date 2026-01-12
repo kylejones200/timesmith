@@ -77,19 +77,35 @@ class SeasonalBaselineDetector(BaseDetector):
         if not isinstance(series.index, pd.DatetimeIndex):
             raise ValueError("Data must have datetime index for seasonal baseline detection")
 
-        # Create DataFrame for easier manipulation
-        df = pd.DataFrame({"value": series.values, "date": series.index})
-        df["seasonal_key"] = self._get_seasonal_key(df["date"])
-
-        # Compute seasonal statistics
-        seasonal_stats = (
-            df.groupby("seasonal_key")
-            .agg({"value": ["mean", "std"]})
-            .reset_index()
-        )
-        seasonal_stats.columns = ["seasonal_key", "mean", "std"]
-        seasonal_stats["std"] = seasonal_stats["std"].fillna(0)
-        seasonal_stats["std"] = seasonal_stats["std"].replace(0, 1.0)
+        # Use vectorized NumPy operations for seasonal statistics
+        values = series.values
+        seasonal_keys = self._get_seasonal_key(series.index)
+        
+        # Convert keys to integer indices for efficient numpy operations
+        unique_keys = pd.Series(seasonal_keys).unique()
+        key_to_idx = {key: idx for idx, key in enumerate(unique_keys)}
+        key_indices = np.array([key_to_idx[key] for key in seasonal_keys], dtype=np.int32)
+        
+        n_keys = len(unique_keys)
+        
+        # Vectorized computation of mean and std per group
+        means = np.zeros(n_keys, dtype=np.float64)
+        stds = np.zeros(n_keys, dtype=np.float64)
+        
+        for i, key in enumerate(unique_keys):
+            mask = key_indices == i
+            if mask.sum() > 0:
+                group_values = values[mask]
+                means[i] = np.mean(group_values)
+                std_val = np.std(group_values, ddof=1) if len(group_values) > 1 else 0.0
+                stds[i] = std_val if std_val > 0 else 1.0
+        
+        # Create DataFrame for compatibility
+        seasonal_stats = pd.DataFrame({
+            "seasonal_key": unique_keys,
+            "mean": means,
+            "std": stds,
+        })
 
         self.seasonal_stats_ = seasonal_stats
         self.index_ = series.index

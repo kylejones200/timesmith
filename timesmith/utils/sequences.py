@@ -10,6 +10,17 @@ from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
 
+try:
+    from numba import njit, prange
+    HAS_NUMBA = True
+except ImportError:
+    HAS_NUMBA = False
+    def njit(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+    prange = range
+
 
 def create_sequences(
     data: SeriesLike, lookback: int = 5, forecast_horizon: int = 1
@@ -125,22 +136,65 @@ def create_sequences_with_exog(
             f"forecast_horizon ({forecast_horizon})"
         )
 
-    X_seq = []
-    y_seq = []
-    y_target = []
-
-    for i in range(lookback, n_samples - forecast_horizon + 1):
-        X_seq.append(X_values[i - lookback : i])
-        y_seq.append(y_values[i - lookback : i])
-        y_target.append(y_values[i : i + forecast_horizon])
-
-    X_seq = np.array(X_seq)
-    y_seq = np.array(y_seq)
-    y_target = np.array(y_target)
+    # Use optimized sequence creation
+    if HAS_NUMBA and n_samples > 100:
+        X_seq, y_seq, y_target = _create_sequences_with_exog_numba(
+            X_values, y_values, lookback, forecast_horizon
+        )
+    else:
+        X_seq = []
+        y_seq = []
+        y_target = []
+        for i in range(lookback, n_samples - forecast_horizon + 1):
+            X_seq.append(X_values[i - lookback : i])
+            y_seq.append(y_values[i - lookback : i])
+            y_target.append(y_values[i : i + forecast_horizon])
+        X_seq = np.array(X_seq)
+        y_seq = np.array(y_seq)
+        y_target = np.array(y_target)
 
     # Reshape y_target if forecast_horizon == 1
     if forecast_horizon == 1:
         y_target = y_target.reshape(-1, 1)
 
+    return X_seq, y_seq, y_target
+
+
+@njit(cache=True, fastmath=True, parallel=True)
+def _create_sequences_with_exog_numba(
+    X_values: np.ndarray, y_values: np.ndarray, lookback: int, forecast_horizon: int
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Numba-optimized sequence creation with exogenous variables.
+    
+    Args:
+        X_values: Exogenous variables (n_samples, n_exog_features).
+        y_values: Target values (n_samples, 1).
+        lookback: Lookback window size.
+        forecast_horizon: Forecast horizon.
+    
+    Returns:
+        Tuple of (X_seq, y_seq, y_target) arrays.
+    """
+    n_samples = len(y_values)
+    n_seq = n_samples - lookback - forecast_horizon + 1
+    
+    if n_seq <= 0:
+        n_exog = X_values.shape[1] if X_values.ndim > 1 else 1
+        return (
+            np.empty((0, lookback, n_exog)),
+            np.empty((0, lookback, 1)),
+            np.empty((0, forecast_horizon, 1)),
+        )
+    
+    n_exog = X_values.shape[1] if X_values.ndim > 1 else 1
+    X_seq = np.zeros((n_seq, lookback, n_exog), dtype=np.float64)
+    y_seq = np.zeros((n_seq, lookback, 1), dtype=np.float64)
+    y_target = np.zeros((n_seq, forecast_horizon, 1), dtype=np.float64)
+    
+    for i in prange(n_seq):
+        X_seq[i] = X_values[i - lookback : i].reshape(lookback, -1)
+        y_seq[i] = y_values[i - lookback : i].reshape(lookback, -1)
+        y_target[i] = y_values[i : i + forecast_horizon].reshape(forecast_horizon, -1)
+    
     return X_seq, y_seq, y_target
 

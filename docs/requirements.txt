@@ -22,3 +22,4 @@ sphinx-autodoc-typehints>=1.20
 # tslearn>=0.6.0
 # numba>=0.57.0
 
+

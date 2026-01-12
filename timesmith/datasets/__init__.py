@@ -1,4 +1,6 @@
 """Dataset loaders and example data."""
 
-__all__ = []
+from timesmith.datasets.loaders import load_fred, load_yahoo
+
+__all__ = ["load_fred", "load_yahoo"]
 
