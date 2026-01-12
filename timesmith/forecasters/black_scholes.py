@@ -1,7 +1,10 @@
 """Black-Scholes Monte Carlo forecaster for asset price forecasting."""
 
 import logging
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
+
+if TYPE_CHECKING:
+    from timesmith.typing import SeriesLike, TableLike
 
 import numpy as np
 import pandas as pd
