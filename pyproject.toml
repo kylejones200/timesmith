@@ -15,7 +15,7 @@ maintainers = [
   { name = "Kyle T. Jones", email = "kyletjones@gmail.com" }
 ]
 
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 dependencies = [
   "pandas>=1.5.0,<3.0.0",  # Major version upper bound for stability
   "numpy>=1.20.0,<3.0.0",  # Major version upper bound for stability
