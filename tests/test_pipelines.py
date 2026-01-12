@@ -82,7 +82,9 @@ class TestForecasterPipeline:
         pipeline = make_forecaster_pipeline(transformer, forecaster=forecaster)
 
         params = pipeline.get_params()
-        assert "forecaster" in params
+        # Check for forecaster-related params (they use double underscore notation)
+        forecaster_params = [k for k in params.keys() if k.startswith("forecaster__")]
+        assert len(forecaster_params) > 0, "Should have forecaster parameters"
         assert len(params) > 0
 
     def test_pipeline_set_params(self):
