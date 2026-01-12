@@ -24,7 +24,7 @@ This document tracks the production readiness improvements made to TimeSmith.
 - [x] Comprehensive forecaster tests
 - [x] Pipeline composition tests
 - [x] Data validation utilities (edge cases, quality checks)
-- [x] Dependabot configuration (automated security updates)
+- [x] ~~Dependabot configuration~~ (removed - too many PRs)
 
 ## 📊 Current Status
 
@@ -49,7 +49,7 @@ This document tracks the production readiness improvements made to TimeSmith.
 - ✅ Documentation strings
 
 ### Security & Maintenance
-- ✅ Dependabot for automated updates
+- ✅ Dependency upper bounds for stability
 - ✅ Dependency version bounds
 - ✅ Security policy
 - ✅ CI/CD with multiple checks
@@ -102,7 +102,7 @@ This document tracks the production readiness improvements made to TimeSmith.
 | Test Coverage | 60%+ | ~30% | ✅ Baseline set |
 | Python Version | 3.12+ | 3.12 | ✅ |
 | CI Pass Rate | 100% | 100% | ✅ |
-| Security Updates | Automated | Dependabot | ✅ |
+| Security Updates | Manual | Dependency bounds | ✅ |
 | Model Serialization | Yes | Yes | ✅ |
 | Error Handling | Comprehensive | Good | ✅ |
 
@@ -122,7 +122,7 @@ This document tracks the production readiness improvements made to TimeSmith.
 - **Features**: 85% (17/20)
   - Core features complete, some enhancements possible
 - **Security**: 100% (20/20)
-  - Security policy, Dependabot, dependency bounds
+  - Security policy, dependency bounds
 
 ## ✅ Ready for Production?
 
