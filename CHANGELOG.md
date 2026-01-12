@@ -7,14 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- CLI entry point (`timesmith --version`, `timesmith --info`)
-- CHANGELOG.md for tracking version history
-- SECURITY.md for vulnerability reporting
+## [0.1.2] - 2025-01-XX
 
 ### Changed
-- CI/CD now blocks on test failures (previously non-blocking)
-- Improved test coverage reporting
+- Reduced core dependencies from 4 to 2 packages (pandas, numpy only)
+- Made scipy optional (moved to `timesmith[scipy]` optional dependency)
+- Made networkx optional (moved to `timesmith[network]` optional dependency)
+- Removed duplicate statsmodels entry from optional dependencies
+- Updated CI to ignore E501 line length errors (handled by formatter)
+- Added pre-commit hooks for automatic linting
+
+### Fixed
+- Fixed all critical linting errors (F401, F841)
+- Fixed unused imports and variables
+- Improved error messages for missing optional dependencies
+
+### Added
+- Pre-commit hooks configuration (`.pre-commit-config.yaml`)
+- Fallback implementations for scipy functions (median filter)
+- Better import error messages for optional dependencies
 
 ## [0.1.1] - 2024-XX-XX
 

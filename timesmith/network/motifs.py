@@ -3,11 +3,19 @@
 from itertools import combinations
 from typing import Dict
 
-import networkx as nx
 import numpy as np
 
+# Optional networkx
+try:
+    import networkx as nx
 
-def directed_3node_motifs(G: nx.DiGraph) -> Dict:
+    HAS_NETWORKX = True
+except ImportError:
+    HAS_NETWORKX = False
+    nx = None
+
+
+def directed_3node_motifs(G) -> Dict:
     """Count connected directed 3-node motifs using adjacency pattern codes.
 
     Args:
@@ -16,6 +24,11 @@ def directed_3node_motifs(G: nx.DiGraph) -> Dict:
     Returns:
         Dictionary mapping motif codes to counts and frequencies.
     """
+    if not HAS_NETWORKX:
+        raise ImportError(
+            "NetworkX is required for directed_3node_motifs. "
+            "Install with: pip install networkx or pip install timesmith[network]"
+        )
     if not G.is_directed():
         raise ValueError("Graph must be directed.")
 
@@ -45,7 +58,12 @@ def directed_3node_motifs(G: nx.DiGraph) -> Dict:
     }
 
 
-def undirected_4node_motifs(G: nx.Graph) -> Dict:
+def undirected_4node_motifs(G) -> Dict:
+    if not HAS_NETWORKX:
+        raise ImportError(
+            "NetworkX is required for undirected_4node_motifs. "
+            "Install with: pip install networkx or pip install timesmith[network]"
+        )
     """Count simple undirected 4-node motifs by isomorphism type.
 
     Args:

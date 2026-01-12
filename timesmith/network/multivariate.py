@@ -3,10 +3,18 @@
 Implements k-NN, ε-NN, and weighted network builders from distance matrices.
 """
 
-from typing import Optional, Tuple
+from typing import Optional
 
-import networkx as nx
 import numpy as np
+
+# Optional networkx
+try:
+    import networkx as nx
+
+    HAS_NETWORKX = True
+except ImportError:
+    HAS_NETWORKX = False
+    nx = None
 
 # Try to import numba for JIT compilation (optional)
 try:
@@ -64,7 +72,12 @@ def net_knn(
     mutual: bool = False,
     weighted: bool = False,
     directed: bool = False,
-) -> Tuple[nx.Graph, np.ndarray]:
+):
+    if not HAS_NETWORKX:
+        raise ImportError(
+            "NetworkX is required for net_knn. "
+            "Install with: pip install networkx or pip install timesmith[network]"
+        )
     """k-Nearest Neighbors network from distance matrix.
 
     Each node is connected to its k nearest neighbors.
@@ -155,7 +168,7 @@ def net_enn(
     percentile: Optional[float] = None,
     weighted: bool = False,
     directed: bool = False,
-) -> Tuple[nx.Graph, np.ndarray]:
+):
     """ε-Nearest Neighbors network from distance matrix.
 
     Each node is connected to all nodes within distance epsilon.

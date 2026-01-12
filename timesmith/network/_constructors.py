@@ -1,12 +1,24 @@
 """Native network construction algorithms for time series."""
 
 import logging
-from typing import Optional, Tuple
+from typing import Optional
 
-import networkx as nx
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+# Optional networkx for graph construction
+try:
+    import networkx as nx
+
+    HAS_NETWORKX = True
+except ImportError:
+    HAS_NETWORKX = False
+    nx = None
+    logger.warning(
+        "NetworkX not installed. Network construction will not work. "
+        "Install with: pip install networkx or pip install timesmith[network]"
+    )
 
 # Try to import numba for JIT compilation (optional)
 try:
@@ -216,7 +228,7 @@ def build_hvg(
     weighted: bool = False,
     limit: Optional[int] = None,
     directed: bool = False,
-) -> Tuple[nx.Graph, np.ndarray]:
+):
     """Build Horizontal Visibility Graph (HVG).
 
     Two nodes i and j are connected if all intermediate values are below
@@ -231,6 +243,11 @@ def build_hvg(
     Returns:
         Tuple of (NetworkX graph, adjacency matrix).
     """
+    if not HAS_NETWORKX:
+        raise ImportError(
+            "NetworkX is required for build_hvg. "
+            "Install with: pip install networkx or pip install timesmith[network]"
+        )
     n = len(series)
     G = nx.DiGraph() if directed else nx.Graph()
     G.add_nodes_from(range(n))
@@ -296,7 +313,7 @@ def build_nvg(
     weighted: bool = False,
     limit: Optional[int] = None,
     directed: bool = False,
-) -> Tuple[nx.Graph, np.ndarray]:
+):
     """Build Natural Visibility Graph (NVG).
 
     Two nodes i and j are connected if all intermediate values are below
@@ -311,6 +328,11 @@ def build_nvg(
     Returns:
         Tuple of (NetworkX graph, adjacency matrix).
     """
+    if not HAS_NETWORKX:
+        raise ImportError(
+            "NetworkX is required for build_hvg. "
+            "Install with: pip install networkx or pip install timesmith[network]"
+        )
     n = len(series)
     G = nx.DiGraph() if directed else nx.Graph()
     G.add_nodes_from(range(n))
@@ -381,7 +403,7 @@ def build_recurrence_network(
     metric: str = "euclidean",
     rule: Optional[str] = None,
     k: Optional[int] = None,
-) -> nx.Graph:
+):
     """Build Recurrence Network.
 
     Args:
@@ -439,6 +461,11 @@ def build_recurrence_network(
         threshold = np.percentile(distances[distances > 0], 10)
 
     # Build graph (vectorized edge creation, with optional JIT)
+    if not HAS_NETWORKX:
+        raise ImportError(
+            "NetworkX is required for build_recurrence_network. "
+            "Install with: pip install networkx or pip install timesmith[network]"
+        )
     G = nx.Graph()
     G.add_nodes_from(range(len(vectors)))
 
@@ -532,6 +559,11 @@ def build_transition_network(
         symbol_series = np.digitize(series, bins)
 
     # Build transition network
+    if not HAS_NETWORKX:
+        raise ImportError(
+            "NetworkX is required for build_transition_network. "
+            "Install with: pip install networkx or pip install timesmith[network]"
+        )
     n_states = len(np.unique(symbol_series))
     G = nx.DiGraph()
     G.add_nodes_from(range(n_states))

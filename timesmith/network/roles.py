@@ -2,12 +2,20 @@
 
 from typing import Dict, Tuple
 
-import networkx as nx
 import numpy as np
+
+# Optional networkx
+try:
+    import networkx as nx
+
+    HAS_NETWORKX = True
+except ImportError:
+    HAS_NETWORKX = False
+    nx = None
 
 
 def node_roles(
-    G: nx.Graph,
+    G,
     n_roles: int = 4,
     features: str = "basic",
     n_init: int = 10,
@@ -25,6 +33,11 @@ def node_roles(
     Returns:
         Tuple of (node_to_role dictionary, cluster centers array).
     """
+    if not HAS_NETWORKX:
+        raise ImportError(
+            "NetworkX is required for node_roles. "
+            "Install with: pip install networkx or pip install timesmith[network]"
+        )
     try:
         from sklearn.cluster import KMeans
     except ImportError:

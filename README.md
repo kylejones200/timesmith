@@ -171,10 +171,15 @@ configure_logging(level="INFO")
 
 ## Requirements
 
+**Core dependencies (minimal):**
 - Python 3.12 or higher
 - pandas >= 1.5.0
 - numpy >= 1.20.0
-- scipy >= 1.10.0
+
+**Optional dependencies:**
+- `scipy` - For filters, changepoint detection, distances (install: `pip install timesmith[scipy]`)
+- `networkx` - For network analysis features (install: `pip install timesmith[network]`)
+- See `pyproject.toml` for all optional dependency groups
 - networkx >= 3.0
 
 See `pyproject.toml` for optional dependencies for specific forecasters.

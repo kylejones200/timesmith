@@ -5,13 +5,33 @@ from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
-from scipy.ndimage import median_filter
 
 from timesmith.core.base import BaseDetector
 from timesmith.core.tags import set_tags
 from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
+
+# Optional scipy for median filtering
+try:
+    from scipy.ndimage import median_filter
+
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
+
+    def median_filter(arr, size):
+        """Simple median filter using numpy (fallback when scipy not available)."""
+        if size <= 1:
+            return arr
+        result = np.zeros_like(arr)
+        half = size // 2
+        for i in range(len(arr)):
+            start = max(0, i - half)
+            end = min(len(arr), i + half + 1)
+            result[i] = np.median(arr[start:end])
+        return result
+
 
 # Optional ruptures library for PELT algorithm
 try:

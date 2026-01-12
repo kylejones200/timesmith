@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "timesmith"
-version = "0.1.1"
+version = "0.1.2"
 description = "TimeSmith for ML models"
 readme = "README.md"
 license = "MIT"
@@ -19,14 +19,12 @@ requires-python = ">=3.12"
 dependencies = [
   "pandas>=1.5.0,<3.0.0",  # Major version upper bound for stability
   "numpy>=1.20.0,<3.0.0",  # Major version upper bound for stability
-  "scipy>=1.10.0,<2.0.0",  # Major version upper bound for stability
-  "networkx>=3.0,<4.0.0",  # Major version upper bound for stability
 ]
 
 [project.optional-dependencies]
 forecasters = [
   "pmdarima>=2.0.0,<3.0.0",  # For ARIMAForecaster
-  "statsmodels>=0.14.0,<1.0.0",  # For ExponentialSmoothingForecaster and VARForecaster
+  "statsmodels>=0.14.0,<1.0.0",  # For ExponentialSmoothingForecaster, VARForecaster, and stationarity tests
   "prophet>=1.1.0,<2.0.0",  # For ProphetForecaster
 ]
 deep_learning = [
@@ -36,8 +34,11 @@ kalman = [
   "filterpy>=1.4.5,<2.0.0",  # For KalmanFilterForecaster
 ]
 network = [
-  # networkx is now a core dependency
+  "networkx>=3.0,<4.0.0",  # For network analysis features
   "numba>=0.57.0,<1.0.0",  # Optional: JIT compilation for faster network construction
+]
+scipy = [
+  "scipy>=1.10.0,<2.0.0",  # For filters, changepoint detection, distances, etc.
 ]
 distances = [
   "tslearn>=0.6.0,<1.0.0",  # For optimized DTW distance (optional)
@@ -54,9 +55,6 @@ ensemble = [
 ]
 performance = [
   "joblib>=1.0.0,<2.0.0",  # For parallel processing of rolling statistics
-]
-statsmodels = [
-  "statsmodels>=0.14.0,<1.0.0",  # For stationarity tests and advanced time series analysis
 ]
 wavelet = [
   "PyWavelets>=1.4.0,<2.0.0",  # For wavelet-based denoising and anomaly detection
