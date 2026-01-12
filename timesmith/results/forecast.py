@@ -3,8 +3,6 @@
 from dataclasses import dataclass
 from typing import Any, Optional
 
-import pandas as pd
-
 
 @dataclass
 class Forecast:
@@ -29,4 +27,3 @@ class Forecast:
 
         if self.fh is None:
             raise ValueError("fh cannot be None")
-

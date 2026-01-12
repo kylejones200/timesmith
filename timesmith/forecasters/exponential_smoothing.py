@@ -9,7 +9,7 @@ import pandas as pd
 from timesmith.core.base import BaseForecaster
 from timesmith.core.tags import set_tags
 from timesmith.results.forecast import Forecast
-from timesmith.utils.ts_utils import ensure_datetime_index, detect_frequency
+from timesmith.utils.ts_utils import ensure_datetime_index
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,9 @@ class ExponentialSmoothingForecaster(BaseForecaster):
             requires_fh=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "ExponentialSmoothingForecaster":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "ExponentialSmoothingForecaster":
         """Fit exponential smoothing model.
 
         Args:
@@ -78,7 +80,9 @@ class ExponentialSmoothingForecaster(BaseForecaster):
             Self for method chaining.
         """
         if X is not None:
-            logger.warning("Exogenous variables (X) not yet supported for ExponentialSmoothingForecaster")
+            logger.warning(
+                "Exogenous variables (X) not yet supported for ExponentialSmoothingForecaster"
+            )
 
         if isinstance(y, pd.Series):
             series = y
@@ -100,7 +104,9 @@ class ExponentialSmoothingForecaster(BaseForecaster):
 
         # Store residuals for confidence intervals
         self.residuals_ = series - self.model_.fittedvalues
-        self.sigma_ = float(self.residuals_.std(ddof=1)) if len(self.residuals_) > 0 else 0.0
+        self.sigma_ = (
+            float(self.residuals_.std(ddof=1)) if len(self.residuals_) > 0 else 0.0
+        )
 
         self._is_fitted = True
         return self
@@ -121,7 +127,9 @@ class ExponentialSmoothingForecaster(BaseForecaster):
         self._check_is_fitted()
 
         if X is not None:
-            logger.warning("Exogenous variables (X) not yet supported for ExponentialSmoothingForecaster")
+            logger.warning(
+                "Exogenous variables (X) not yet supported for ExponentialSmoothingForecaster"
+            )
 
         # Convert fh to integer
         if isinstance(fh, (list, np.ndarray)):
@@ -137,7 +145,11 @@ class ExponentialSmoothingForecaster(BaseForecaster):
         return Forecast(y_pred=forecast, fh=fh)
 
     def predict_interval(
-        self, fh: Any, X: Optional[Any] = None, coverage: float = 0.9, **predict_params: Any
+        self,
+        fh: Any,
+        X: Optional[Any] = None,
+        coverage: float = 0.9,
+        **predict_params: Any,
     ) -> Forecast:
         """Generate forecast with prediction intervals.
 
@@ -170,4 +182,3 @@ class ExponentialSmoothingForecaster(BaseForecaster):
         )
 
         return Forecast(y_pred=forecast.y_pred, fh=fh, y_int=y_int)
-

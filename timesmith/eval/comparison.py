@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from timesmith.eval.metrics import mae, mape, rmse, r2_score
+from timesmith.eval.metrics import mae, mape, r2_score, rmse
 from timesmith.results.forecast import Forecast
 from timesmith.typing import SeriesLike
 
@@ -66,7 +66,10 @@ class ModelComparison:
                 forecast_values = result.forecast.y_pred
             elif isinstance(result.forecast, pd.Series):
                 forecast_values = result.forecast
-            elif isinstance(result.forecast, pd.DataFrame) and result.forecast.shape[1] == 1:
+            elif (
+                isinstance(result.forecast, pd.DataFrame)
+                and result.forecast.shape[1] == 1
+            ):
                 forecast_values = result.forecast.iloc[:, 0]
             else:
                 forecast_values = pd.Series(result.forecast)
@@ -197,4 +200,3 @@ def compare_models(
         comparison.add_result(result)
 
     return comparison.compare_metrics(actual_series)
-

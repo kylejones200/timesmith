@@ -38,9 +38,7 @@ def load_fred(
         )
 
     try:
-        df = web.DataReader(
-            series_id, "fred", start=start, end=end, api_key=api_key
-        )
+        df = web.DataReader(series_id, "fred", start=start, end=end, api_key=api_key)
         # Convert to Series if single column
         if isinstance(df, pd.DataFrame) and df.shape[1] == 1:
             series = df.iloc[:, 0]
@@ -111,4 +109,3 @@ def load_yahoo(
             f"Failed to load Yahoo Finance data for {symbol}: {e}. "
             "Check that the symbol is valid and you have an internet connection."
         ) from e
-

@@ -118,4 +118,3 @@ class FeatureUnion(BaseFeaturizer):
                 featurizer.set_params(**featurizer_params[name])
 
         return self
-

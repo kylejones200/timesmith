@@ -42,8 +42,6 @@ class TestBasicForecastWorkflow:
     def test_forecast_without_fit_raises_error(self):
         """Test that predicting without fitting raises NotFittedError."""
         forecaster = SimpleMovingAverageForecaster(window=3)
-        dates = pd.date_range("2020-01-01", periods=20, freq="D")
-        y = pd.Series(np.random.randn(20).cumsum(), index=dates)
 
         with pytest.raises(NotFittedError):
             forecaster.predict(fh=5)
@@ -92,4 +90,3 @@ class TestBasicForecastWorkflow:
         summary = summarize_backtest(result)
         assert "aggregate_metrics" in summary
         assert "per_fold_metrics" in summary
-

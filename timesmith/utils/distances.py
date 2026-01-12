@@ -4,7 +4,6 @@ These are utility functions for computing distances between time series.
 """
 
 import logging
-from typing import Optional
 
 import numpy as np
 
@@ -14,6 +13,7 @@ logger = logging.getLogger(__name__)
 try:
     from scipy import stats
     from scipy.signal import correlate
+
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
@@ -24,6 +24,7 @@ except ImportError:
 
 try:
     from tslearn.metrics import cdist_dtw as _cdist_dtw
+
     HAS_TSLEARN = True
 except ImportError:
     HAS_TSLEARN = False
@@ -154,4 +155,3 @@ def manhattan_distance(x: np.ndarray, y: np.ndarray) -> float:
     if len(x) != len(y):
         raise ValueError(f"Series must have same length: {len(x)} != {len(y)}")
     return float(np.sum(np.abs(x - y)))
-

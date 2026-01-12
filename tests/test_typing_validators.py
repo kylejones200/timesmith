@@ -1,7 +1,7 @@
 """Tests for typing validators."""
 
-import pytest
 import pandas as pd
+import pytest
 
 from timesmith.typing.validators import (
     assert_panel,
@@ -58,7 +58,7 @@ class TestSeriesValidators:
         """Test that assert_series_like is an alias for assert_series."""
         s = pd.Series([1, 2, 3], index=pd.date_range("2020-01-01", periods=3))
         assert_series_like(s)  # Should not raise
-        
+
         df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
         with pytest.raises(TypeError, match="must be SeriesLike"):
             assert_series_like(df)
@@ -121,4 +121,3 @@ class TestTableValidators:
             {"feature1": [1, 2, 3]}, index=pd.date_range("2020-01-01", periods=3)
         )
         assert_table(df)  # Should not raise
-

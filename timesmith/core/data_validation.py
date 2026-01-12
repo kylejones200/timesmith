@@ -135,7 +135,11 @@ def validate_forecast_horizon(
         if np.any(fh_array > max_horizon):
             raise ValidationError(
                 f"{name} contains values greater than maximum {max_horizon}",
-                context={"name": name, "max_horizon": max_horizon, "values": fh_array.tolist()},
+                context={
+                    "name": name,
+                    "max_horizon": max_horizon,
+                    "values": fh_array.tolist(),
+                },
             )
 
     return fh_array
@@ -179,14 +183,20 @@ def check_data_alignment(
         raise ValidationError(
             f"{name_y} and {name_x} must have the same length, "
             f"got {len(y)} and {len(X)}",
-            context={"name_y": name_y, "name_x": name_x, "len_y": len(y), "len_x": len(X)},
+            context={
+                "name_y": name_y,
+                "name_x": name_x,
+                "len_y": len(y),
+                "len_x": len(X),
+            },
         )
 
     # Check index alignment if both are pandas objects
-    if isinstance(y, (pd.Series, pd.DataFrame)) and isinstance(X, (pd.Series, pd.DataFrame)):
+    if isinstance(y, (pd.Series, pd.DataFrame)) and isinstance(
+        X, (pd.Series, pd.DataFrame)
+    ):
         if not y_index.equals(x_index):
             raise ValidationError(
                 f"{name_y} and {name_x} must have aligned indices",
                 context={"name_y": name_y, "name_x": name_x},
             )
-

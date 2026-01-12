@@ -49,4 +49,3 @@ class ForecastTask:
             f"ForecastTask(fh={self.fh}, cutoff={self.cutoff}, "
             f"frequency={self.frequency})"
         )
-

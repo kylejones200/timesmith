@@ -1,7 +1,7 @@
 """Tests for evaluation splitters."""
 
-import pytest
 import pandas as pd
+import pytest
 
 from timesmith.eval.splitters import ExpandingWindowSplit, SlidingWindowSplit
 
@@ -47,4 +47,3 @@ class TestSlidingWindowSplit:
         train_idx, test_idx, cutoff = splits[0]
         assert len(y.iloc[train_idx]) == 3
         assert len(y.iloc[test_idx]) == 2
-

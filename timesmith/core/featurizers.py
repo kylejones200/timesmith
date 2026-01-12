@@ -8,14 +8,14 @@ import pandas as pd
 
 from timesmith.core.base import BaseFeaturizer
 from timesmith.core.tags import set_tags
-from timesmith.utils.ts_utils import ensure_datetime_index
 from timesmith.utils.rolling import (
-    rolling_mean,
-    rolling_std,
-    rolling_min,
     rolling_max,
+    rolling_mean,
     rolling_median,
+    rolling_min,
+    rolling_std,
 )
+from timesmith.utils.ts_utils import ensure_datetime_index
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +48,7 @@ class LagFeaturizer(BaseFeaturizer):
         if prevent_leads:
             self.lags = [lag for lag in lags if lag > 0]
             if len(self.lags) < len(lags):
-                logger.warning(
-                    f"Filtered out non-positive lags. Using: {self.lags}"
-                )
+                logger.warning(f"Filtered out non-positive lags. Using: {self.lags}")
         else:
             self.lags = lags
 
@@ -67,7 +65,9 @@ class LagFeaturizer(BaseFeaturizer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "LagFeaturizer":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "LagFeaturizer":
         """Fit the featurizer (no-op for lags).
 
         Args:
@@ -105,14 +105,10 @@ class LagFeaturizer(BaseFeaturizer):
         # Convert to numpy array for vectorized operations
         values = np.asarray(series, dtype=np.float64)
         n = len(values)
-        
+
         # Pre-allocate result dictionary for all features
         feature_dict = {"value": values}
-        
-        # Vectorized lag features using numpy roll
-        all_lags = list(self.lags) + list(self.seasonal_lags)
-        max_lag = max(all_lags) if all_lags else 0
-        
+
         # Standard lag features - vectorized
         for lag in self.lags:
             lagged = np.full(n, np.nan, dtype=np.float64)
@@ -136,7 +132,9 @@ class LagFeaturizer(BaseFeaturizer):
                     curr_values = values[lag:]
                     # Avoid division by zero
                     mask = prev_values != 0
-                    pct_values[lag:][mask] = (curr_values[mask] - prev_values[mask]) / prev_values[mask]
+                    pct_values[lag:][mask] = (
+                        curr_values[mask] - prev_values[mask]
+                    ) / prev_values[mask]
                     feature_dict[f"pct_change_{lag}"] = pct_values
 
         # Seasonal lag features - vectorized
@@ -186,7 +184,9 @@ class RollingFeaturizer(BaseFeaturizer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "RollingFeaturizer":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "RollingFeaturizer":
         """Fit the featurizer (no-op for rolling features).
 
         Args:
@@ -223,12 +223,13 @@ class RollingFeaturizer(BaseFeaturizer):
 
         # Convert to numpy array for vectorized operations
         values = np.asarray(series, dtype=np.float64)
-        
+
         # Pre-allocate result dictionary
         feature_dict = {"value": values}
-        
+
         # Use parallelized rolling statistics if many windows/functions
         from timesmith.utils.rolling import rolling_statistics
+
         if len(self.windows) * len(self.functions) > 4:
             rolling_results = rolling_statistics(
                 values, self.windows, self.functions, n_jobs=self.n_jobs
@@ -280,7 +281,9 @@ class TimeFeaturizer(BaseFeaturizer):
             requires_sorted_index=False,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "TimeFeaturizer":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "TimeFeaturizer":
         """Fit the featurizer (no-op for time features).
 
         Args:
@@ -355,7 +358,9 @@ class DifferencingFeaturizer(BaseFeaturizer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "DifferencingFeaturizer":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "DifferencingFeaturizer":
         """Fit the featurizer (no-op for differencing).
 
         Args:
@@ -420,7 +425,9 @@ class SeasonalFeaturizer(BaseFeaturizer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "SeasonalFeaturizer":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "SeasonalFeaturizer":
         """Fit the featurizer (no-op for seasonal features).
 
         Args:
@@ -485,7 +492,9 @@ class DegradationRateFeaturizer(BaseFeaturizer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "DegradationRateFeaturizer":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "DegradationRateFeaturizer":
         """Fit the featurizer (no-op for degradation rates).
 
         Args:
@@ -525,4 +534,3 @@ class DegradationRateFeaturizer(BaseFeaturizer):
             df[f"degradation_rate_{period}"] = series.pct_change(periods=period)
 
         return df
-

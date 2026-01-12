@@ -15,8 +15,9 @@ logger = logging.getLogger(__name__)
 
 try:
     from darts import TimeSeries as DartsTimeSeries
-    from darts.models import RNNModel
     from darts.dataprocessing.transformers import Scaler
+    from darts.models import RNNModel
+
     HAS_DARTS = True
 except ImportError:
     DartsTimeSeries = None
@@ -60,8 +61,7 @@ class LSTMForecaster(BaseForecaster):
         """
         if not HAS_DARTS:
             raise ImportError(
-                "darts is required for LSTMForecaster. "
-                "Install with: pip install darts"
+                "darts is required for LSTMForecaster. Install with: pip install darts"
             )
 
         super().__init__()
@@ -84,7 +84,9 @@ class LSTMForecaster(BaseForecaster):
             requires_fh=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "LSTMForecaster":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "LSTMForecaster":
         """Fit LSTM model.
 
         Args:
@@ -96,7 +98,9 @@ class LSTMForecaster(BaseForecaster):
             Self for method chaining.
         """
         if X is not None:
-            logger.warning("Exogenous variables (X) not yet supported for LSTMForecaster")
+            logger.warning(
+                "Exogenous variables (X) not yet supported for LSTMForecaster"
+            )
 
         if isinstance(y, pd.Series):
             series = y
@@ -161,7 +165,9 @@ class LSTMForecaster(BaseForecaster):
         self._check_is_fitted()
 
         if X is not None:
-            logger.warning("Exogenous variables (X) not yet supported for LSTMForecaster")
+            logger.warning(
+                "Exogenous variables (X) not yet supported for LSTMForecaster"
+            )
 
         # Convert fh to integer
         if isinstance(fh, (list, np.ndarray)):
@@ -192,12 +198,16 @@ class LSTMForecaster(BaseForecaster):
 
         # Align index if needed
         if len(forecast_series) == n_periods:
-            forecast_series.index = expected_index[:len(forecast_series)]
+            forecast_series.index = expected_index[: len(forecast_series)]
 
         return Forecast(y_pred=forecast_series, fh=fh)
 
     def predict_interval(
-        self, fh: Any, X: Optional[Any] = None, coverage: float = 0.9, **predict_params: Any
+        self,
+        fh: Any,
+        X: Optional[Any] = None,
+        coverage: float = 0.9,
+        **predict_params: Any,
     ) -> Forecast:
         """Generate forecast with prediction intervals.
 
@@ -229,6 +239,7 @@ class LSTMForecaster(BaseForecaster):
         forecast_std = forecast.y_pred.std() * 0.1  # Rough estimate
 
         from scipy import stats
+
         z_score = stats.norm.ppf((1 + coverage) / 2)
         margin = z_score * forecast_std
 
@@ -241,4 +252,3 @@ class LSTMForecaster(BaseForecaster):
         )
 
         return Forecast(y_pred=forecast.y_pred, fh=fh, y_int=y_int)
-

@@ -1,7 +1,7 @@
 """Change point detection for time series."""
 
 import logging
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # Optional ruptures library for PELT algorithm
 try:
     import ruptures as rpt
+
     RUPTURES_AVAILABLE = True
 except ImportError:
     RUPTURES_AVAILABLE = False
@@ -27,13 +28,17 @@ except ImportError:
 # Optional numba for acceleration
 try:
     from numba import njit
+
     HAS_NUMBA = True
 except ImportError:
     HAS_NUMBA = False
+
     def njit(*args, **kwargs):
         """Dummy decorator when numba is not available."""
+
         def decorator(func):
             return func
+
         if len(args) == 1 and callable(args[0]):
             return args[0]
         return decorator
@@ -178,8 +183,10 @@ class PELTDetector(BaseDetector):
         """Initialize PELT detector.
 
         Args:
-            penalty: Penalty value (higher = fewer change points). Auto-tuned if None.
-            model: Cost function model ('l2' for mean shift, 'rbf' for distributional change).
+            penalty: Penalty value (higher = fewer change points).
+                Auto-tuned if None.
+            model: Cost function model ('l2' for mean shift,
+                'rbf' for distributional change).
             min_size: Minimum segment length.
             jump: Subsample (1 = no subsampling).
             preprocess: Whether to preprocess data before detection.
@@ -268,7 +275,9 @@ class PELTDetector(BaseDetector):
         # Remove the final point (always equals length of signal)
         change_points = np.array(change_points[:-1])
 
-        logger.info(f"PELT detected {len(change_points)} change points (model={self.model})")
+        logger.info(
+            f"PELT detected {len(change_points)} change points (model={self.model})"
+        )
 
         return change_points
 
@@ -323,7 +332,9 @@ class BayesianChangePointDetector(BaseDetector):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "BayesianChangePointDetector":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "BayesianChangePointDetector":
         """Fit the change point detector.
 
         Args:
@@ -366,7 +377,6 @@ class BayesianChangePointDetector(BaseDetector):
         self._check_is_fitted()
 
         y_data = self.y_processed_
-        n = len(y_data)
         hazard = 1.0 / self.expected_segment_length
         beta0 = np.var(y_data)
 
@@ -436,7 +446,9 @@ class CUSUMDetector(BaseDetector):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "CUSUMDetector":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "CUSUMDetector":
         """Fit the change point detector.
 
         Args:

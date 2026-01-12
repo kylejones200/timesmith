@@ -48,9 +48,6 @@ class TestForecasterPipeline:
         forecaster = NaiveForecaster()
         pipeline = make_forecaster_pipeline(transformer, forecaster=forecaster)
 
-        dates = pd.date_range("2020-01-01", periods=30, freq="D")
-        y = pd.Series(np.abs(np.random.randn(30).cumsum()) + 1, index=dates)
-
         with pytest.raises(NotFittedError):
             pipeline.predict(fh=5)
 
@@ -95,4 +92,3 @@ class TestForecasterPipeline:
 
         pipeline.set_params(forecaster__window=10)
         assert pipeline.forecaster.window == 10
-

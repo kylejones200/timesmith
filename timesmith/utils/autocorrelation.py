@@ -1,7 +1,7 @@
 """Autocorrelation and partial autocorrelation functions for time series."""
 
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -12,19 +12,21 @@ logger = logging.getLogger(__name__)
 
 try:
     from numba import njit, prange
+
     HAS_NUMBA = True
 except ImportError:
     HAS_NUMBA = False
+
     def njit(*args, **kwargs):
         def decorator(func):
             return func
+
         return decorator
+
     prange = range
 
 
-def autocorrelation(
-    data: SeriesLike, max_lag: Optional[int] = None
-) -> List[float]:
+def autocorrelation(data: SeriesLike, max_lag: Optional[int] = None) -> List[float]:
     """Calculate autocorrelation function (ACF).
 
     Computes the autocorrelation coefficients for different lags, measuring
@@ -100,27 +102,27 @@ def _autocorrelation_numba(
     data_array: np.ndarray, mean: float, var: float, max_lag: int
 ) -> np.ndarray:
     """Numba-optimized autocorrelation computation.
-    
+
     Args:
         data_array: Input data array.
         mean: Mean of the data.
         var: Variance of the data.
         max_lag: Maximum lag.
-    
+
     Returns:
         Array of autocorrelation coefficients.
     """
     n = len(data_array)
     acf = np.zeros(max_lag + 1, dtype=np.float64)
     acf[0] = 1.0  # Lag 0 is always 1.0
-    
+
     for lag in range(1, max_lag + 1):
         numerator = 0.0
         for i in range(lag, n):
             numerator += (data_array[i] - mean) * (data_array[i - lag] - mean)
         denominator = var * n
         acf[lag] = numerator / denominator if denominator != 0 else 0.0
-    
+
     return acf
 
 
@@ -201,9 +203,7 @@ def partial_autocorrelation(
     return pacf
 
 
-def autocorrelation_plot_data(
-    data: SeriesLike, max_lag: Optional[int] = None
-) -> dict:
+def autocorrelation_plot_data(data: SeriesLike, max_lag: Optional[int] = None) -> dict:
     """Calculate ACF and PACF for plotting.
 
     Convenience function that returns both ACF and PACF along with
@@ -233,4 +233,3 @@ def autocorrelation_plot_data(
         "acf": np.array(acf),
         "pacf": np.array(pacf),
     }
-

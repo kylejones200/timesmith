@@ -46,4 +46,3 @@ HANDLES_MISSING = "handles_missing"  # bool
 REQUIRES_SORTED_INDEX = "requires_sorted_index"  # bool
 SUPPORTS_PANEL = "supports_panel"  # bool
 REQUIRES_FH = "requires_fh"  # bool
-

@@ -32,6 +32,7 @@ class Adapter(BaseTransformer):
 
 # Example adapters (simplified implementations)
 
+
 class SeriesToTableAdapter(Adapter):
     """Adapter that converts SeriesLike to TableLike via window features.
 
@@ -46,7 +47,9 @@ class SeriesToTableAdapter(Adapter):
         """
         self.window_size = window_size
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "SeriesToTableAdapter":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "SeriesToTableAdapter":
         """Fit the adapter (no-op for this simple version).
 
         Args:
@@ -85,7 +88,9 @@ class TableToSeriesAdapter(Adapter):
     This is a placeholder - full implementation would handle alignment.
     """
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "TableToSeriesAdapter":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "TableToSeriesAdapter":
         """Fit the adapter (no-op for this simple version).
 
         Args:
@@ -119,4 +124,3 @@ class TableToSeriesAdapter(Adapter):
             # Otherwise, take first column as default
             return y.iloc[:, 0]
         return y
-

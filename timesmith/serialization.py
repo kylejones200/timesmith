@@ -7,7 +7,7 @@ import json
 import logging
 import pickle
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 from timesmith.exceptions import ConfigurationError, DataError
 
@@ -191,4 +191,3 @@ def get_model_metadata(filepath: Union[str, Path]) -> dict:
 
     with open(metadata_path, "r") as f:
         return json.load(f)
-

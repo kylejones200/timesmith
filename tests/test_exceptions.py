@@ -1,7 +1,5 @@
 """Tests for TimeSmith custom exceptions."""
 
-import pytest
-
 from timesmith.exceptions import (
     ConfigurationError,
     DataError,
@@ -114,4 +112,3 @@ class TestSpecificErrors:
         error = ConfigurationError("Invalid parameter", context={"param": "alpha"})
         assert isinstance(error, TimeSmithError)
         assert error.context["param"] == "alpha"
-

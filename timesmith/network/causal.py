@@ -17,19 +17,24 @@ logger = logging.getLogger(__name__)
 # Try to import numba for JIT compilation (optional)
 try:
     from numba import njit
+
     HAS_NUMBA = True
 except ImportError:
     HAS_NUMBA = False
+
     def njit(*args, **kwargs):
         def decorator(func):
             return func
+
         if args and callable(args[0]):
             return args[0]
         return decorator
 
 
 @njit(cache=True)
-def _count_joint_2d(indices1: np.ndarray, indices2: np.ndarray, bins: int) -> np.ndarray:
+def _count_joint_2d(
+    indices1: np.ndarray, indices2: np.ndarray, bins: int
+) -> np.ndarray:
     """Count joint 2D histogram using Numba JIT (fast path).
 
     Args:
@@ -51,7 +56,9 @@ def _count_joint_2d(indices1: np.ndarray, indices2: np.ndarray, bins: int) -> np
 
 
 @njit(cache=True)
-def _count_joint_3d(indices1: np.ndarray, indices2: np.ndarray, indices3: np.ndarray, bins: int) -> np.ndarray:
+def _count_joint_3d(
+    indices1: np.ndarray, indices2: np.ndarray, indices3: np.ndarray, bins: int
+) -> np.ndarray:
     """Count joint 3D histogram using Numba JIT (fast path).
 
     Args:
@@ -75,7 +82,13 @@ def _count_joint_3d(indices1: np.ndarray, indices2: np.ndarray, indices3: np.nda
 
 
 @njit(cache=True)
-def _count_joint_4d(indices1: np.ndarray, indices2: np.ndarray, indices3: np.ndarray, indices4: np.ndarray, bins: int) -> np.ndarray:
+def _count_joint_4d(
+    indices1: np.ndarray,
+    indices2: np.ndarray,
+    indices3: np.ndarray,
+    indices4: np.ndarray,
+    bins: int,
+) -> np.ndarray:
     """Count joint 4D histogram using Numba JIT (fast path).
 
     Args:
@@ -95,7 +108,12 @@ def _count_joint_4d(indices1: np.ndarray, indices2: np.ndarray, indices3: np.nda
         idx2 = int(indices2[i])
         idx3 = int(indices3[i])
         idx4 = int(indices4[i])
-        if 0 <= idx1 < bins and 0 <= idx2 < bins and 0 <= idx3 < bins and 0 <= idx4 < bins:
+        if (
+            0 <= idx1 < bins
+            and 0 <= idx2 < bins
+            and 0 <= idx3 < bins
+            and 0 <= idx4 < bins
+        ):
             counts[idx1, idx2, idx3, idx4] += 1
     return counts
 
@@ -188,7 +206,9 @@ def conditional_transfer_entropy(
     # Use JIT-compiled counting if available
     if HAS_NUMBA and len(y_t) > 100:
         try:
-            joint_counts_yz = _count_joint_3d(y_t_clipped, y_past_clipped, z_past_clipped, bins)
+            joint_counts_yz = _count_joint_3d(
+                y_t_clipped, y_past_clipped, z_past_clipped, bins
+            )
             marginal_counts_yz = _count_joint_2d(y_past_clipped, z_past_clipped, bins)
         except Exception:
             # Fallback to vectorized counting
@@ -211,13 +231,19 @@ def conditional_transfer_entropy(
     if HAS_NUMBA:
         joint_entropy_yz = _compute_entropy_numba(joint_probs_yz.flatten())
     else:
-        joint_entropy_yz = -np.sum(joint_probs_yz[joint_probs_yz > 0] * np.log2(joint_probs_yz[joint_probs_yz > 0]))
+        joint_entropy_yz = -np.sum(
+            joint_probs_yz[joint_probs_yz > 0]
+            * np.log2(joint_probs_yz[joint_probs_yz > 0])
+        )
 
     marginal_probs_yz = marginal_counts_yz / (np.sum(marginal_counts_yz) + 1e-10)
     if HAS_NUMBA:
         marginal_entropy_yz = _compute_entropy_numba(marginal_probs_yz.flatten())
     else:
-        marginal_entropy_yz = -np.sum(marginal_probs_yz[marginal_probs_yz > 0] * np.log2(marginal_probs_yz[marginal_probs_yz > 0]))
+        marginal_entropy_yz = -np.sum(
+            marginal_probs_yz[marginal_probs_yz > 0]
+            * np.log2(marginal_probs_yz[marginal_probs_yz > 0])
+        )
 
     h_y_given_yz = joint_entropy_yz - marginal_entropy_yz
 
@@ -227,20 +253,36 @@ def conditional_transfer_entropy(
     # Use JIT-compiled counting if available
     if HAS_NUMBA and len(y_t) > 100:
         try:
-            joint_counts_4d = _count_joint_4d(y_t_clipped, y_past_clipped, x_past_clipped, z_past_clipped, bins)
-            marginal_counts_xyz = _count_joint_3d(y_past_clipped, x_past_clipped, z_past_clipped, bins)
+            joint_counts_4d = _count_joint_4d(
+                y_t_clipped, y_past_clipped, x_past_clipped, z_past_clipped, bins
+            )
+            marginal_counts_xyz = _count_joint_3d(
+                y_past_clipped, x_past_clipped, z_past_clipped, bins
+            )
         except Exception:
             # Fallback to vectorized counting
             joint_counts_4d = np.zeros((bins, bins, bins, bins), dtype=np.int32)
-            np.add.at(joint_counts_4d, (y_t_clipped, y_past_clipped, x_past_clipped, z_past_clipped), 1)
+            np.add.at(
+                joint_counts_4d,
+                (y_t_clipped, y_past_clipped, x_past_clipped, z_past_clipped),
+                1,
+            )
             marginal_counts_xyz = np.zeros((bins, bins, bins), dtype=np.int32)
-            np.add.at(marginal_counts_xyz, (y_past_clipped, x_past_clipped, z_past_clipped), 1)
+            np.add.at(
+                marginal_counts_xyz, (y_past_clipped, x_past_clipped, z_past_clipped), 1
+            )
     else:
         # Use advanced indexing for counting (vectorized)
         joint_counts_4d = np.zeros((bins, bins, bins, bins), dtype=np.int32)
-        np.add.at(joint_counts_4d, (y_t_clipped, y_past_clipped, x_past_clipped, z_past_clipped), 1)
+        np.add.at(
+            joint_counts_4d,
+            (y_t_clipped, y_past_clipped, x_past_clipped, z_past_clipped),
+            1,
+        )
         marginal_counts_xyz = np.zeros((bins, bins, bins), dtype=np.int32)
-        np.add.at(marginal_counts_xyz, (y_past_clipped, x_past_clipped, z_past_clipped), 1)
+        np.add.at(
+            marginal_counts_xyz, (y_past_clipped, x_past_clipped, z_past_clipped), 1
+        )
 
     total_4d = np.sum(joint_counts_4d)
     if total_4d == 0:
@@ -250,13 +292,19 @@ def conditional_transfer_entropy(
     if HAS_NUMBA:
         joint_entropy_4d = _compute_entropy_numba(joint_probs_4d.flatten())
     else:
-        joint_entropy_4d = -np.sum(joint_probs_4d[joint_probs_4d > 0] * np.log2(joint_probs_4d[joint_probs_4d > 0]))
+        joint_entropy_4d = -np.sum(
+            joint_probs_4d[joint_probs_4d > 0]
+            * np.log2(joint_probs_4d[joint_probs_4d > 0])
+        )
 
     marginal_probs_xyz = marginal_counts_xyz / (np.sum(marginal_counts_xyz) + 1e-10)
     if HAS_NUMBA:
         marginal_entropy_xyz = _compute_entropy_numba(marginal_probs_xyz.flatten())
     else:
-        marginal_entropy_xyz = -np.sum(marginal_probs_xyz[marginal_probs_xyz > 0] * np.log2(marginal_probs_xyz[marginal_probs_xyz > 0]))
+        marginal_entropy_xyz = -np.sum(
+            marginal_probs_xyz[marginal_probs_xyz > 0]
+            * np.log2(marginal_probs_xyz[marginal_probs_xyz > 0])
+        )
 
     h_y_given_xyz = joint_entropy_4d - marginal_entropy_xyz
 
@@ -270,7 +318,7 @@ def transfer_entropy_network(
     lag: int = 1,
     bins: int = 10,
     threshold: Optional[float] = None,
-    series_names: Optional[list] = None
+    series_names: Optional[list] = None,
 ):
     """Construct a directed network based on transfer entropy between time series.
 
@@ -303,9 +351,7 @@ def transfer_entropy_network(
     for i in range(n_series):
         for j in range(n_series):
             if i != j:
-                te_matrix[i, j] = transfer_entropy(
-                    X[i], X[j], lag=lag, bins=bins
-                )
+                te_matrix[i, j] = transfer_entropy(X[i], X[j], lag=lag, bins=bins)
 
     G = nx.DiGraph()
     G.add_nodes_from(range(n_series))
@@ -318,15 +364,23 @@ def transfer_entropy_network(
                     G.add_edge(i, j, weight=te_val)
 
     for i, name in enumerate(series_names):
-        G.nodes[i]['name'] = name
+        G.nodes[i]["name"] = name
 
     stats = {
-        'mean_te': float(np.mean(te_matrix[te_matrix > 0])) if np.any(te_matrix > 0) else 0.0,
-        'max_te': float(np.max(te_matrix)),
-        'min_te': float(np.min(te_matrix[te_matrix > 0])) if np.any(te_matrix > 0) else 0.0,
-        'std_te': float(np.std(te_matrix[te_matrix > 0])) if np.any(te_matrix > 0) else 0.0,
-        'n_edges': G.number_of_edges(),
-        'density': G.number_of_edges() / (n_series * (n_series - 1)) if n_series > 1 else 0.0,
+        "mean_te": float(np.mean(te_matrix[te_matrix > 0]))
+        if np.any(te_matrix > 0)
+        else 0.0,
+        "max_te": float(np.max(te_matrix)),
+        "min_te": float(np.min(te_matrix[te_matrix > 0]))
+        if np.any(te_matrix > 0)
+        else 0.0,
+        "std_te": float(np.std(te_matrix[te_matrix > 0]))
+        if np.any(te_matrix > 0)
+        else 0.0,
+        "n_edges": G.number_of_edges(),
+        "density": G.number_of_edges() / (n_series * (n_series - 1))
+        if n_series > 1
+        else 0.0,
     }
 
     return G, te_matrix, stats
@@ -411,7 +465,9 @@ def transfer_entropy(
     if HAS_NUMBA:
         joint_entropy = _compute_entropy_numba(joint_probs.flatten())
     else:
-        joint_entropy = -np.sum(joint_probs[joint_probs > 0] * np.log2(joint_probs[joint_probs > 0]))
+        joint_entropy = -np.sum(
+            joint_probs[joint_probs > 0] * np.log2(joint_probs[joint_probs > 0])
+        )
 
     # Marginal counts (vectorized using bincount)
     y_past_counts = np.bincount(y_past_clipped, minlength=bins)
@@ -419,7 +475,9 @@ def transfer_entropy(
     if HAS_NUMBA:
         y_past_entropy = _compute_entropy_numba(y_past_probs)
     else:
-        y_past_entropy = -np.sum(y_past_probs[y_past_probs > 0] * np.log2(y_past_probs[y_past_probs > 0]))
+        y_past_entropy = -np.sum(
+            y_past_probs[y_past_probs > 0] * np.log2(y_past_probs[y_past_probs > 0])
+        )
 
     h_y_given_y_past = joint_entropy - y_past_entropy
 
@@ -430,7 +488,9 @@ def transfer_entropy(
     # Use JIT-compiled counting if available
     if HAS_NUMBA and len(y_t) > 100:
         try:
-            joint_counts_3d = _count_joint_3d(y_t_clipped, y_past_clipped, x_past_clipped, bins)
+            joint_counts_3d = _count_joint_3d(
+                y_t_clipped, y_past_clipped, x_past_clipped, bins
+            )
             marginal_counts = _count_joint_2d(y_past_clipped, x_past_clipped, bins)
         except Exception:
             # Fallback to vectorized counting
@@ -454,14 +514,18 @@ def transfer_entropy(
         joint_entropy_3d = _compute_entropy_numba(joint_probs_3d.flatten())
     else:
         joint_entropy_3d = -np.sum(
-            joint_probs_3d[joint_probs_3d > 0] * np.log2(joint_probs_3d[joint_probs_3d > 0])
+            joint_probs_3d[joint_probs_3d > 0]
+            * np.log2(joint_probs_3d[joint_probs_3d > 0])
         )
 
     marginal_probs = marginal_counts / (np.sum(marginal_counts) + 1e-10)
     if HAS_NUMBA:
         marginal_entropy = _compute_entropy_numba(marginal_probs.flatten())
     else:
-        marginal_entropy = -np.sum(marginal_probs[marginal_probs > 0] * np.log2(marginal_probs[marginal_probs > 0]))
+        marginal_entropy = -np.sum(
+            marginal_probs[marginal_probs > 0]
+            * np.log2(marginal_probs[marginal_probs > 0])
+        )
 
     h_y_given_y_past_x_past = joint_entropy_3d - marginal_entropy
 
@@ -497,7 +561,9 @@ class TransferEntropyDetector(BaseDetector):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "TransferEntropyDetector":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "TransferEntropyDetector":
         """Fit the detector (computes transfer entropy if X provided).
 
         Args:
@@ -566,7 +632,9 @@ class TransferEntropyDetector(BaseDetector):
         te = transfer_entropy(x_vals, y_vals, lag=self.lag, bins=self.bins)
         return te
 
-    def predict(self, y: Any, X: Optional[Any] = None, threshold: Optional[float] = None) -> Any:
+    def predict(
+        self, y: Any, X: Optional[Any] = None, threshold: Optional[float] = None
+    ) -> Any:
         """Predict causal relationships based on transfer entropy.
 
         Args:
@@ -587,4 +655,3 @@ class TransferEntropyDetector(BaseDetector):
             return score >= threshold
         else:
             return score
-

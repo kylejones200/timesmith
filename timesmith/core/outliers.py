@@ -8,13 +8,13 @@ import pandas as pd
 
 from timesmith.core.base import BaseTransformer
 from timesmith.core.tags import set_tags
-from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
 
 # Optional sklearn for IsolationForest
 try:
     from sklearn.ensemble import IsolationForest
+
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
@@ -50,7 +50,9 @@ class HampelOutlierRemover(BaseTransformer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "HampelOutlierRemover":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "HampelOutlierRemover":
         """Fit the transformer (computes outlier mask).
 
         Args:
@@ -81,6 +83,7 @@ class HampelOutlierRemover(BaseTransformer):
 
         # Compute rolling median using optimized NumPy (center=False to avoid future data leakage)
         from timesmith.utils.rolling import rolling_median
+
         rolling_median_arr = rolling_median(self.y_, self.window, min_periods=1)
         # Fill NaN with global median
         global_median = np.nanmedian(self.y_)
@@ -97,7 +100,9 @@ class HampelOutlierRemover(BaseTransformer):
             threshold = self.n_sigma * 0.01 * np.median(np.abs(self.y_))
         else:
             # Threshold (using modified Z-score)
-            threshold = self.n_sigma * 1.4826 * mad  # 1.4826 makes MAD comparable to std
+            threshold = (
+                self.n_sigma * 1.4826 * mad
+            )  # 1.4826 makes MAD comparable to std
 
         # Detect outliers
         self.outlier_mask_ = np.abs(residuals) > threshold
@@ -168,7 +173,9 @@ class IsolationForestOutlierRemover(BaseTransformer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "IsolationForestOutlierRemover":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "IsolationForestOutlierRemover":
         """Fit the transformer (trains IsolationForest).
 
         Args:
@@ -234,7 +241,10 @@ class IsolationForestOutlierRemover(BaseTransformer):
 
         logger.debug(
             f"IsolationForest detected {self.outlier_mask_.sum()} outliers",
-            extra={"n_outliers": int(self.outlier_mask_.sum()), "contamination": self.contamination},
+            extra={
+                "n_outliers": int(self.outlier_mask_.sum()),
+                "contamination": self.contamination,
+            },
         )
 
         self._is_fitted = True
@@ -289,7 +299,9 @@ class ZScoreOutlierRemover(BaseTransformer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "ZScoreOutlierRemover":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "ZScoreOutlierRemover":
         """Fit the transformer (computes outlier mask).
 
         Args:
@@ -320,6 +332,7 @@ class ZScoreOutlierRemover(BaseTransformer):
 
         # Compute baseline using optimized NumPy (center=False to avoid future data leakage)
         from timesmith.utils.rolling import rolling_median
+
         rolling_median_arr = rolling_median(self.y_, self.window, min_periods=1)
         # Fill NaN with global median
         global_median = np.nanmedian(self.y_)
@@ -351,7 +364,10 @@ class ZScoreOutlierRemover(BaseTransformer):
 
         logger.debug(
             f"Z-score method detected {self.outlier_mask_.sum()} outliers",
-            extra={"n_outliers": int(self.outlier_mask_.sum()), "z_threshold": self.z_threshold},
+            extra={
+                "n_outliers": int(self.outlier_mask_.sum()),
+                "z_threshold": self.z_threshold,
+            },
         )
 
         self._is_fitted = True
@@ -375,4 +391,3 @@ class ZScoreOutlierRemover(BaseTransformer):
         cleaned_index = self.index_[keep_mask]
 
         return pd.Series(cleaned_values, index=cleaned_index)
-

@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 try:
     from prophet import Prophet
+
     HAS_PROPHET = True
 except ImportError:
     Prophet = None
@@ -74,7 +75,9 @@ class ProphetForecaster(BaseForecaster):
             requires_fh=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "ProphetForecaster":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "ProphetForecaster":
         """Fit Prophet model.
 
         Args:
@@ -86,7 +89,9 @@ class ProphetForecaster(BaseForecaster):
             Self for method chaining.
         """
         if X is not None:
-            logger.warning("Exogenous variables (X) not yet supported for ProphetForecaster")
+            logger.warning(
+                "Exogenous variables (X) not yet supported for ProphetForecaster"
+            )
 
         if isinstance(y, pd.Series):
             series = y
@@ -99,10 +104,7 @@ class ProphetForecaster(BaseForecaster):
         self.train_index_ = series.index
 
         # Prepare data for Prophet (requires 'ds' and 'y' columns)
-        df = pd.DataFrame({
-            "ds": series.index,
-            "y": series.values
-        })
+        df = pd.DataFrame({"ds": series.index, "y": series.values})
 
         # Create and fit Prophet model
         self.model_ = Prophet(
@@ -135,7 +137,9 @@ class ProphetForecaster(BaseForecaster):
         self._check_is_fitted()
 
         if X is not None:
-            logger.warning("Exogenous variables (X) not yet supported for ProphetForecaster")
+            logger.warning(
+                "Exogenous variables (X) not yet supported for ProphetForecaster"
+            )
 
         # Convert fh to integer
         if isinstance(fh, (list, np.ndarray)):
@@ -186,7 +190,11 @@ class ProphetForecaster(BaseForecaster):
         return Forecast(y_pred=y_pred, fh=fh)
 
     def predict_interval(
-        self, fh: Any, X: Optional[Any] = None, coverage: float = 0.9, **predict_params: Any
+        self,
+        fh: Any,
+        X: Optional[Any] = None,
+        coverage: float = 0.9,
+        **predict_params: Any,
     ) -> Forecast:
         """Generate forecast with prediction intervals.
 
@@ -242,8 +250,8 @@ class ProphetForecaster(BaseForecaster):
         # Calculate intervals based on coverage
         # Prophet provides yhat_lower and yhat_upper, but we need to adjust for coverage
         alpha = 1 - coverage
-        lower_col = f"yhat_lower"
-        upper_col = f"yhat_upper"
+        lower_col = "yhat_lower"
+        upper_col = "yhat_upper"
 
         # Prophet uses 80% intervals by default, we need to adjust
         # For simplicity, we'll use the provided intervals and scale them
@@ -251,6 +259,7 @@ class ProphetForecaster(BaseForecaster):
         if coverage != 0.8:
             # Use z-score to approximate intervals
             from scipy import stats
+
             z_score = stats.norm.ppf((1 + coverage) / 2)
             z_80 = stats.norm.ppf(0.9)  # 80% interval z-score
 
@@ -280,4 +289,3 @@ class ProphetForecaster(BaseForecaster):
         )
 
         return Forecast(y_pred=y_pred, fh=fh, y_int=y_int)
-

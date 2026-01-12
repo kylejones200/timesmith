@@ -8,13 +8,13 @@ import pandas as pd
 
 from timesmith.core.base import BaseDetector, BaseTransformer
 from timesmith.core.tags import set_tags
-from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
 
 # Optional PyWavelets for wavelet transforms
 try:
     import pywt
+
     PYWT_AVAILABLE = True
 except ImportError:
     PYWT_AVAILABLE = False
@@ -62,7 +62,9 @@ class WaveletDenoiser(BaseTransformer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "WaveletDenoiser":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "WaveletDenoiser":
         """Fit the transformer (no-op, but required by interface).
 
         Args:
@@ -88,9 +90,9 @@ class WaveletDenoiser(BaseTransformer):
         self.y_ = self.y_[valid_mask]
         self.index_ = self.index_[valid_mask]
 
-        if len(self.y_) < 2 ** self.level:
+        if len(self.y_) < 2**self.level:
             raise ValueError(
-                f"Need at least {2 ** self.level} data points for level {self.level} decomposition"
+                f"Need at least {2**self.level} data points for level {self.level} decomposition"
             )
 
         self._is_fitted = True
@@ -166,7 +168,9 @@ class WaveletDetector(BaseDetector):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "WaveletDetector":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "WaveletDetector":
         """Fit the detector.
 
         Args:
@@ -192,9 +196,9 @@ class WaveletDetector(BaseDetector):
         self.y_ = self.y_[valid_mask]
         self.index_ = self.index_[valid_mask]
 
-        if len(self.y_) < 2 ** self.level:
+        if len(self.y_) < 2**self.level:
             raise ValueError(
-                f"Need at least {2 ** self.level} data points for level {self.level} decomposition"
+                f"Need at least {2**self.level} data points for level {self.level} decomposition"
             )
 
         self._is_fitted = True
@@ -277,9 +281,7 @@ class WaveletDetector(BaseDetector):
 
         return flags
 
-    def get_wavelet_coefficients(
-        self, y: Any
-    ) -> Tuple[np.ndarray, list]:
+    def get_wavelet_coefficients(self, y: Any) -> Tuple[np.ndarray, list]:
         """Get wavelet decomposition coefficients.
 
         Args:
@@ -295,4 +297,3 @@ class WaveletDetector(BaseDetector):
         details = coeffs[1:]
 
         return approximation, details
-

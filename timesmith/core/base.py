@@ -78,7 +78,9 @@ class BaseEstimator(BaseObject):
         """Initialize the estimator."""
         self._is_fitted = False
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "BaseEstimator":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "BaseEstimator":
         """Fit the estimator to data.
 
         Args:
@@ -161,9 +163,7 @@ class BaseForecaster(BaseEstimator):
     Forecasters predict future values of time series.
     """
 
-    def predict(
-        self, fh: Any, X: Optional[Any] = None, **predict_params: Any
-    ) -> Any:
+    def predict(self, fh: Any, X: Optional[Any] = None, **predict_params: Any) -> Any:
         """Make forecasts.
 
         Args:
@@ -178,7 +178,11 @@ class BaseForecaster(BaseEstimator):
         raise NotImplementedError("Subclasses must implement predict")
 
     def predict_interval(
-        self, fh: Any, X: Optional[Any] = None, coverage: float = 0.9, **predict_params: Any
+        self,
+        fh: Any,
+        X: Optional[Any] = None,
+        coverage: float = 0.9,
+        **predict_params: Any,
     ) -> Any:
         """Make forecasts with prediction intervals.
 
@@ -192,9 +196,7 @@ class BaseForecaster(BaseEstimator):
             Forecast results with intervals (ForecastLike with y_int).
         """
         self._check_is_fitted()
-        raise UnsupportedOperationError(
-            "predict_interval", self.__class__.__name__
-        )
+        raise UnsupportedOperationError("predict_interval", self.__class__.__name__)
 
 
 class BaseDetector(BaseEstimator):
@@ -216,7 +218,9 @@ class BaseDetector(BaseEstimator):
         self._check_is_fitted()
         raise NotImplementedError("Subclasses must implement score")
 
-    def predict(self, y: Any, X: Optional[Any] = None, threshold: Optional[float] = None) -> Any:
+    def predict(
+        self, y: Any, X: Optional[Any] = None, threshold: Optional[float] = None
+    ) -> Any:
         """Predict anomaly flags.
 
         Args:
@@ -249,4 +253,3 @@ class BaseFeaturizer(BaseTransformer):
         """
         self._check_is_fitted()
         raise NotImplementedError("Subclasses must implement transform")
-

@@ -1,7 +1,7 @@
 """Monte Carlo simulation utilities for time series."""
 
 import logging
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 # Optional matplotlib import
 try:
     import matplotlib.pyplot as plt
+
     HAS_MATPLOTLIB = True
 except ImportError:
     HAS_MATPLOTLIB = False
@@ -152,25 +153,22 @@ def plot_monte_carlo(
         ImportError: If plotsmith is not installed.
     """
     try:
-        from timesmith.utils.plotting import plot_monte_carlo_paths
         import matplotlib.pyplot as plt
-        
+
+        from timesmith.utils.plotting import plot_monte_carlo_paths
+
         fig, ax = plot_monte_carlo_paths(
-            prices,
-            title=title,
-            show_mean=True,
-            show_percentiles=True
+            prices, title=title, show_mean=True, show_percentiles=True
         )
-        
+
         if save_path:
             fig.savefig(save_path)
         else:
             plt.show()
-        
+
         plt.close(fig)
     except ImportError:
         raise ImportError(
             "plotsmith is required for plot_monte_carlo. "
             "Install with: pip install plotsmith"
         )
-

@@ -1,7 +1,7 @@
 """Backtest result dataclass."""
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import pandas as pd
 
@@ -28,4 +28,3 @@ class BacktestResult:
                 f"results DataFrame must have columns: {required_cols}. "
                 f"Got: {list(self.results.columns)}"
             )
-

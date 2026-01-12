@@ -1,7 +1,7 @@
 """Native network construction algorithms for time series."""
 
 import logging
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 import networkx as nx
 import numpy as np
@@ -11,16 +11,20 @@ logger = logging.getLogger(__name__)
 # Try to import numba for JIT compilation (optional)
 try:
     from numba import njit, prange
+
     HAS_NUMBA = True
 except ImportError:
     HAS_NUMBA = False
+
     # Create dummy decorator
     def njit(*args, **kwargs):
         def decorator(func):
             return func
+
         if args and callable(args[0]):
             return args[0]
         return decorator
+
     prange = range
 
 
@@ -127,11 +131,7 @@ def _nvg_visibility_check(series: np.ndarray, i: int, j: int, limit_val: int) ->
 
 
 @njit(cache=True)  # Disable parallel for now (can cause issues with dynamic allocation)
-def _hvg_edges_numba(
-    series: np.ndarray,
-    weighted: bool,
-    limit_val: int
-):
+def _hvg_edges_numba(series: np.ndarray, weighted: bool, limit_val: int):
     """Compute HVG edges using Numba JIT (fast path).
 
     Returns:
@@ -170,11 +170,7 @@ def _hvg_edges_numba(
 
 
 @njit(cache=True)  # Disable parallel for now (can cause issues with dynamic allocation)
-def _nvg_edges_numba(
-    series: np.ndarray,
-    weighted: bool,
-    limit_val: int
-):
+def _nvg_edges_numba(series: np.ndarray, weighted: bool, limit_val: int):
     """Compute NVG edges using Numba JIT (fast path).
 
     Returns:
@@ -200,7 +196,9 @@ def _nvg_edges_numba(
                 targets[edge_count] = j
                 if weighted:
                     # Weight by Euclidean distance in (time, value) space
-                    weights_arr[edge_count] = np.sqrt((j - i) ** 2 + (series[j] - series[i]) ** 2)
+                    weights_arr[edge_count] = np.sqrt(
+                        (j - i) ** 2 + (series[j] - series[i]) ** 2
+                    )
                 else:
                     weights_arr[edge_count] = 1.0  # Dummy value if not weighted
                 edge_count += 1
@@ -241,7 +239,9 @@ def build_hvg(
     if HAS_NUMBA and n > 100:  # Only use JIT for larger series (compilation overhead)
         try:
             limit_val = limit if limit is not None else n
-            sources, targets, weights_arr = _hvg_edges_numba(series, weighted, limit_val)
+            sources, targets, weights_arr = _hvg_edges_numba(
+                series, weighted, limit_val
+            )
             # Add edges in batch
             if weighted:
                 edges = list(zip(sources, targets, weights_arr))
@@ -258,7 +258,7 @@ def build_hvg(
         HAS_NUMBA_FALLBACK = False
 
     # Python fallback (or for small series)
-    if not HAS_NUMBA or n <= 100 or (HAS_NUMBA and 'HAS_NUMBA_FALLBACK' in locals()):
+    if not HAS_NUMBA or n <= 100 or (HAS_NUMBA and "HAS_NUMBA_FALLBACK" in locals()):
         # Build edges
         for i in range(n):
             for j in range(i + 1, n):
@@ -319,7 +319,9 @@ def build_nvg(
     if HAS_NUMBA and n > 100:  # Only use JIT for larger series (compilation overhead)
         try:
             limit_val = limit if limit is not None else n
-            sources, targets, weights_arr = _nvg_edges_numba(series, weighted, limit_val)
+            sources, targets, weights_arr = _nvg_edges_numba(
+                series, weighted, limit_val
+            )
             # Add edges in batch
             if weighted:
                 edges = list(zip(sources, targets, weights_arr))
@@ -336,7 +338,7 @@ def build_nvg(
         HAS_NUMBA_FALLBACK = False
 
     # Python fallback (or for small series)
-    if not HAS_NUMBA or n <= 100 or (HAS_NUMBA and 'HAS_NUMBA_FALLBACK' in locals()):
+    if not HAS_NUMBA or n <= 100 or (HAS_NUMBA and "HAS_NUMBA_FALLBACK" in locals()):
         # Build edges
         for i in range(n):
             for j in range(i + 1, n):
@@ -404,7 +406,9 @@ def build_recurrence_network(
     if embedding_dimension > 1:
         # Time-delay embedding (vectorized)
         max_idx = n - (embedding_dimension - 1) * time_delay
-        indices = np.arange(max_idx)[:, None] + np.arange(embedding_dimension) * time_delay
+        indices = (
+            np.arange(max_idx)[:, None] + np.arange(embedding_dimension) * time_delay
+        )
         vectors = series[indices]
     else:
         vectors = series.reshape(-1, 1)
@@ -418,7 +422,9 @@ def build_recurrence_network(
     }
     scipy_metric = metric_map.get(metric)
     if scipy_metric is None:
-        raise ValueError(f"Unsupported metric: {metric}. Must be one of {list(metric_map.keys())}")
+        raise ValueError(
+            f"Unsupported metric: {metric}. Must be one of {list(metric_map.keys())}"
+        )
 
     distances = squareform(pdist(vectors, metric=scipy_metric))
 
@@ -437,7 +443,7 @@ def build_recurrence_network(
     G.add_nodes_from(range(len(vectors)))
 
     n_vec = len(vectors)
-    
+
     # Use JIT-compiled edge finding if available
     if HAS_NUMBA and n_vec > 100:
         try:
@@ -448,13 +454,17 @@ def build_recurrence_network(
                 edges = _recurrence_edges_numba_knn(distances, threshold)
             else:
                 # Epsilon rule: ensure threshold is scalar
-                thresh_val = float(threshold) if isinstance(threshold, np.ndarray) else threshold
+                thresh_val = (
+                    float(threshold) if isinstance(threshold, np.ndarray) else threshold
+                )
                 edges = _recurrence_edges_numba_epsilon(distances, thresh_val)
             G.add_edges_from(edges)
             return G
         except Exception as e:
             # Fallback to vectorized approach
-            logger.debug(f"Numba JIT failed for recurrence network, using vectorized fallback: {e}")
+            logger.debug(
+                f"Numba JIT failed for recurrence network, using vectorized fallback: {e}"
+            )
             pass
 
     # Vectorized approach (or fallback)
@@ -462,10 +472,14 @@ def build_recurrence_network(
         # For k-NN, use per-node threshold (vectorized)
         # Create mask: edge exists if distance <= threshold[i] OR distance <= threshold[j]
         threshold_matrix = np.minimum(threshold[:, None], threshold[None, :])
-        mask = (distances <= threshold_matrix) & (np.triu(np.ones_like(distances, dtype=bool), k=1))
+        mask = (distances <= threshold_matrix) & (
+            np.triu(np.ones_like(distances, dtype=bool), k=1)
+        )
     else:
         # Epsilon rule (vectorized)
-        mask = (distances <= threshold) & (np.triu(np.ones_like(distances, dtype=bool), k=1))
+        mask = (distances <= threshold) & (
+            np.triu(np.ones_like(distances, dtype=bool), k=1)
+        )
 
     # Add edges from mask
     edges = np.argwhere(mask)
@@ -509,7 +523,9 @@ def build_transition_network(
         pattern_tuples = [tuple(p) for p in patterns]
         unique_patterns = list(dict.fromkeys(pattern_tuples))  # Preserves order
         pattern_to_idx = {pattern: idx for idx, pattern in enumerate(unique_patterns)}
-        symbol_series = np.array([pattern_to_idx[pattern] for pattern in pattern_tuples])
+        symbol_series = np.array(
+            [pattern_to_idx[pattern] for pattern in pattern_tuples]
+        )
     else:
         # Equal-width binning
         bins = np.linspace(series.min(), series.max(), n_bins + 1)[1:-1]
@@ -533,4 +549,3 @@ def build_transition_network(
             G.add_edge(int(from_state), int(to_state), weight=int(count))
 
     return G
-

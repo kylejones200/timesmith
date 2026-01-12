@@ -1,7 +1,7 @@
 """Vector Autoregression (VAR) forecaster implementation."""
 
 import logging
-from typing import Any, Optional, List
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -9,13 +9,13 @@ import pandas as pd
 from timesmith.core.base import BaseForecaster
 from timesmith.core.tags import set_tags
 from timesmith.results.forecast import Forecast
-from timesmith.typing import PanelLike, SeriesLike
 
 logger = logging.getLogger(__name__)
 
 try:
     from statsmodels.tsa.api import VAR
     from statsmodels.tsa.stattools import adfuller
+
     HAS_STATSMODELS = True
 except ImportError:
     VAR = None
@@ -71,7 +71,9 @@ class VARForecaster(BaseForecaster):
             requires_fh=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "VARForecaster":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "VARForecaster":
         """Fit VAR model.
 
         Args:
@@ -83,11 +85,15 @@ class VARForecaster(BaseForecaster):
             Self for method chaining.
         """
         if X is not None:
-            logger.warning("Exogenous variables (X) not yet supported for VARForecaster")
+            logger.warning(
+                "Exogenous variables (X) not yet supported for VARForecaster"
+            )
 
         # Convert to DataFrame if needed
         if isinstance(y, pd.Series):
-            raise ValueError("VARForecaster requires multivariate data (DataFrame with multiple columns)")
+            raise ValueError(
+                "VARForecaster requires multivariate data (DataFrame with multiple columns)"
+            )
         elif isinstance(y, pd.DataFrame):
             df = y.copy()
         else:
@@ -132,7 +138,9 @@ class VARForecaster(BaseForecaster):
                 df_stationary = df.diff().dropna()
                 self.differenced_ = True
                 if self.verbose:
-                    logger.info("Applied first-order differencing due to non-stationarity")
+                    logger.info(
+                        "Applied first-order differencing due to non-stationarity"
+                    )
 
         # Fit VAR model
         self.model_ = VAR(df_stationary)
@@ -180,7 +188,9 @@ class VARForecaster(BaseForecaster):
         self._check_is_fitted()
 
         if X is not None:
-            logger.warning("Exogenous variables (X) not yet supported for VARForecaster")
+            logger.warning(
+                "Exogenous variables (X) not yet supported for VARForecaster"
+            )
 
         # Convert fh to integer
         if isinstance(fh, (list, np.ndarray)):
@@ -193,8 +203,7 @@ class VARForecaster(BaseForecaster):
         # Generate forecast
         # Use the last optimal_lag_ observations as starting point
         forecast = self.fitted_model_.forecast(
-            self.fitted_model_.y[-self.optimal_lag_:],
-            steps=n_periods
+            self.fitted_model_.y[-self.optimal_lag_ :], steps=n_periods
         )
 
         # Convert to DataFrame
@@ -225,7 +234,11 @@ class VARForecaster(BaseForecaster):
         return Forecast(y_pred=forecast_df, fh=fh)
 
     def predict_interval(
-        self, fh: Any, X: Optional[Any] = None, coverage: float = 0.9, **predict_params: Any
+        self,
+        fh: Any,
+        X: Optional[Any] = None,
+        coverage: float = 0.9,
+        **predict_params: Any,
     ) -> Forecast:
         """Generate forecast with prediction intervals.
 
@@ -251,10 +264,15 @@ class VARForecaster(BaseForecaster):
         # Calculate standard errors for each variable
         std_errors = {}
         for i, col in enumerate(self.column_names_):
-            std_errors[col] = np.std(residuals.iloc[:, i]) if hasattr(residuals, 'iloc') else np.std(residuals[:, i])
+            std_errors[col] = (
+                np.std(residuals.iloc[:, i])
+                if hasattr(residuals, "iloc")
+                else np.std(residuals[:, i])
+            )
 
         # Use z-score for intervals
         from scipy import stats
+
         z_score = stats.norm.ppf((1 + coverage) / 2)
 
         # Create intervals DataFrame
@@ -267,4 +285,3 @@ class VARForecaster(BaseForecaster):
         y_int = pd.DataFrame(intervals, index=forecast.y_pred.index)
 
         return Forecast(y_pred=forecast.y_pred, fh=fh, y_int=y_int)
-

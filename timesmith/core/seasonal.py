@@ -8,7 +8,6 @@ import pandas as pd
 
 from timesmith.core.base import BaseDetector
 from timesmith.core.tags import set_tags
-from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +55,9 @@ class SeasonalBaselineDetector(BaseDetector):
             raise ValueError(f"Unknown seasonality: {self.seasonality}")
         return seasonality_map[self.seasonality](dates)
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "SeasonalBaselineDetector":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "SeasonalBaselineDetector":
         """Fit the detector by computing seasonal baselines.
 
         Args:
@@ -72,26 +73,32 @@ class SeasonalBaselineDetector(BaseDetector):
         elif isinstance(y, pd.DataFrame) and y.shape[1] == 1:
             series = y.iloc[:, 0]
         else:
-            raise ValueError("y must be Series or single-column DataFrame with datetime index")
+            raise ValueError(
+                "y must be Series or single-column DataFrame with datetime index"
+            )
 
         if not isinstance(series.index, pd.DatetimeIndex):
-            raise ValueError("Data must have datetime index for seasonal baseline detection")
+            raise ValueError(
+                "Data must have datetime index for seasonal baseline detection"
+            )
 
         # Use vectorized NumPy operations for seasonal statistics
         values = series.values
         seasonal_keys = self._get_seasonal_key(series.index)
-        
+
         # Convert keys to integer indices for efficient numpy operations
         unique_keys = pd.Series(seasonal_keys).unique()
         key_to_idx = {key: idx for idx, key in enumerate(unique_keys)}
-        key_indices = np.array([key_to_idx[key] for key in seasonal_keys], dtype=np.int32)
-        
+        key_indices = np.array(
+            [key_to_idx[key] for key in seasonal_keys], dtype=np.int32
+        )
+
         n_keys = len(unique_keys)
-        
+
         # Vectorized computation of mean and std per group
         means = np.zeros(n_keys, dtype=np.float64)
         stds = np.zeros(n_keys, dtype=np.float64)
-        
+
         for i, key in enumerate(unique_keys):
             mask = key_indices == i
             if mask.sum() > 0:
@@ -99,13 +106,15 @@ class SeasonalBaselineDetector(BaseDetector):
                 means[i] = np.mean(group_values)
                 std_val = np.std(group_values, ddof=1) if len(group_values) > 1 else 0.0
                 stds[i] = std_val if std_val > 0 else 1.0
-        
+
         # Create DataFrame for compatibility
-        seasonal_stats = pd.DataFrame({
-            "seasonal_key": unique_keys,
-            "mean": means,
-            "std": stds,
-        })
+        seasonal_stats = pd.DataFrame(
+            {
+                "seasonal_key": unique_keys,
+                "mean": means,
+                "std": stds,
+            }
+        )
 
         self.seasonal_stats_ = seasonal_stats
         self.index_ = series.index
@@ -174,4 +183,3 @@ class SeasonalBaselineDetector(BaseDetector):
         )
 
         return flags
-

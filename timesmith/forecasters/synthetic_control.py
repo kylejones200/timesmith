@@ -10,7 +10,6 @@ from scipy.optimize import minimize
 from timesmith.core.base import BaseForecaster
 from timesmith.core.tags import set_tags
 from timesmith.results.forecast import Forecast
-from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +46,9 @@ class SyntheticControlForecaster(BaseForecaster):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "SyntheticControlForecaster":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "SyntheticControlForecaster":
         """Fit synthetic control model.
 
         Args:
@@ -225,4 +226,3 @@ class SyntheticControlForecaster(BaseForecaster):
             for name, weight in zip(self.control_names_, self.weights_)
             if weight > 0.01  # Only return significant contributors
         }
-

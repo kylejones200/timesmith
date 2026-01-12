@@ -42,7 +42,9 @@ class ForecasterPipeline(BaseForecaster):
                 f"got {type(self.forecaster).__name__}"
             )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "ForecasterPipeline":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "ForecasterPipeline":
         """Fit all transformers then the forecaster.
 
         Args:
@@ -69,9 +71,7 @@ class ForecasterPipeline(BaseForecaster):
         self._is_fitted = True
         return self
 
-    def predict(
-        self, fh: Any, X: Optional[Any] = None, **predict_params: Any
-    ) -> Any:
+    def predict(self, fh: Any, X: Optional[Any] = None, **predict_params: Any) -> Any:
         """Make forecasts through the pipeline.
 
         Args:
@@ -98,7 +98,11 @@ class ForecasterPipeline(BaseForecaster):
         return self.forecaster.predict(fh, Xt, **predict_params)
 
     def predict_interval(
-        self, fh: Any, X: Optional[Any] = None, coverage: float = 0.9, **predict_params: Any
+        self,
+        fh: Any,
+        X: Optional[Any] = None,
+        coverage: float = 0.9,
+        **predict_params: Any,
     ) -> Any:
         """Make forecasts with intervals through the pipeline.
 
@@ -118,7 +122,8 @@ class ForecasterPipeline(BaseForecaster):
             return self.forecaster.predict_interval(fh, Xt, coverage, **predict_params)
         else:
             raise NotImplementedError(
-                f"{self.forecaster.__class__.__name__} does not support predict_interval"
+                f"{self.forecaster.__class__.__name__} "
+                "does not support predict_interval"
             )
 
     def get_params(self, deep: bool = True) -> dict:
@@ -190,4 +195,3 @@ def make_forecaster_pipeline(
     """
     named_steps = [(f"step{i}", step) for i, step in enumerate(transformers)]
     return ForecasterPipeline(named_steps, forecaster)
-

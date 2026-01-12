@@ -1,7 +1,7 @@
 """Stationarity tests for time series."""
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 # Optional statsmodels for advanced tests
 try:
     from statsmodels.tsa.stattools import adfuller, kpss
+
     STATSMODELS_AVAILABLE = True
 except ImportError:
     STATSMODELS_AVAILABLE = False
@@ -194,7 +195,4 @@ def is_stationary(
             logger.warning(f"KPSS test failed: {e}")
             raise ValueError(f"KPSS test failed: {e}") from e
     else:
-        raise ValueError(
-            f"Unknown test '{test}'. Use 'adf' or 'kpss'."
-        )
-
+        raise ValueError(f"Unknown test '{test}'. Use 'adf' or 'kpss'.")

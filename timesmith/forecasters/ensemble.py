@@ -8,7 +8,7 @@ This approach can outperform standard ARIMA models for complex patterns and nois
 """
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -16,7 +16,6 @@ import pandas as pd
 from timesmith.core.base import BaseForecaster
 from timesmith.core.tags import set_tags
 from timesmith.results.forecast import Forecast
-from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +23,7 @@ logger = logging.getLogger(__name__)
 try:
     from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
     from sklearn.preprocessing import StandardScaler
+
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
@@ -91,7 +91,9 @@ class EnsembleForecaster(BaseForecaster):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "EnsembleForecaster":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "EnsembleForecaster":
         """Fit ensemble models on training data.
 
         Args:
@@ -190,7 +192,9 @@ class EnsembleForecaster(BaseForecaster):
                 continue
 
             # Use last row
-            X_step_last = X_step.iloc[[-1]] if isinstance(X_step, pd.DataFrame) else X_step[-1:]
+            X_step_last = (
+                X_step.iloc[[-1]] if isinstance(X_step, pd.DataFrame) else X_step[-1:]
+            )
 
             # Scale features
             X_step_scaled = self.scaler.transform(X_step_last)
@@ -272,4 +276,3 @@ class EnsembleForecaster(BaseForecaster):
         y_reg = df["next_value"]
 
         return X, y_class, y_reg
-

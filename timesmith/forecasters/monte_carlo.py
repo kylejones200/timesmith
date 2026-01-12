@@ -1,7 +1,7 @@
 """Monte Carlo ensemble forecasting with uncertainty quantification."""
 
 import logging
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -9,7 +9,6 @@ import pandas as pd
 from timesmith.core.base import BaseForecaster
 from timesmith.core.tags import set_tags
 from timesmith.results.forecast import Forecast
-from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +55,9 @@ class MonteCarloForecaster(BaseForecaster):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "MonteCarloForecaster":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "MonteCarloForecaster":
         """Fit the base forecaster.
 
         Args:
@@ -118,7 +119,9 @@ class MonteCarloForecaster(BaseForecaster):
                 else:
                     residual_std = np.std(y_pred) if len(y_pred) > 1 else 1.0
 
-                noise = np.random.normal(0, self.noise_level * residual_std, size=len(y_pred))
+                noise = np.random.normal(
+                    0, self.noise_level * residual_std, size=len(y_pred)
+                )
                 y_pred = y_pred + noise
 
             forecasts.append(y_pred)
@@ -158,9 +161,16 @@ class MonteCarloForecaster(BaseForecaster):
             y_int=y_int,
             metadata={
                 "n_samples": self.n_samples,
-                "std": std_forecast.tolist() if isinstance(std_forecast, np.ndarray) else std_forecast,
-                "quantiles": {k: v.tolist() if isinstance(v, np.ndarray) else v for k, v in quantiles.items()},
-                "forecasts": forecasts.tolist() if isinstance(forecasts, np.ndarray) else forecasts,
+                "std": std_forecast.tolist()
+                if isinstance(std_forecast, np.ndarray)
+                else std_forecast,
+                "quantiles": {
+                    k: v.tolist() if isinstance(v, np.ndarray) else v
+                    for k, v in quantiles.items()
+                },
+                "forecasts": forecasts.tolist()
+                if isinstance(forecasts, np.ndarray)
+                else forecasts,
             },
         )
 
@@ -199,12 +209,15 @@ class MonteCarloForecaster(BaseForecaster):
             # Fallback: use existing quantiles if available
             if "quantiles" in forecast.metadata:
                 # Approximate from existing quantiles
-                lower = forecast.metadata["quantiles"].get("p05", forecast.y_pred.values * 0.9)
-                upper = forecast.metadata["quantiles"].get("p95", forecast.y_pred.values * 1.1)
+                lower = forecast.metadata["quantiles"].get(
+                    "p05", forecast.y_pred.values * 0.9
+                )
+                upper = forecast.metadata["quantiles"].get(
+                    "p95", forecast.y_pred.values * 1.1
+                )
             else:
                 # Re-generate if needed
                 return self.predict(fh, X, **predict_params)
 
         forecast.y_int = pd.DataFrame({"lower": lower, "upper": upper})
         return forecast
-

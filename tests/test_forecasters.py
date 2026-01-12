@@ -20,10 +20,11 @@ class TestSimpleMovingAverageForecaster:
     def test_fit(self):
         """Test fitting the forecaster."""
         dates = pd.date_range("2020-01-01", periods=20, freq="D")
-        y = pd.Series(np.random.randn(20).cumsum(), index=dates)
+        y_series = pd.Series(np.random.randn(20).cumsum(), index=dates)
 
         forecaster = SimpleMovingAverageForecaster(window=3)
-        forecaster.fit(y)
+        forecaster.fit(y_series)
+        assert forecaster.is_fitted
 
         assert forecaster.is_fitted
         assert hasattr(forecaster, "train_index_")
@@ -32,8 +33,6 @@ class TestSimpleMovingAverageForecaster:
     def test_predict_without_fit(self):
         """Test that predict raises error if not fitted."""
         forecaster = SimpleMovingAverageForecaster(window=3)
-        dates = pd.date_range("2020-01-01", periods=20, freq="D")
-        y = pd.Series(np.random.randn(20).cumsum(), index=dates)
 
         with pytest.raises(NotFittedError):
             forecaster.predict(fh=5)
@@ -116,4 +115,3 @@ class TestSimpleMovingAverageForecaster:
         assert len(forecast.y_pred) == 2
         # Check that we get a result (may be NaN if insufficient data)
         assert forecast.y_pred is not None
-

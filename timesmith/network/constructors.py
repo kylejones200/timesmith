@@ -5,21 +5,20 @@ as TableLike output (degree sequences, metrics, etc.).
 """
 
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 
 from timesmith.core.base import BaseFeaturizer
 from timesmith.core.tags import set_tags
-from timesmith.network.graph import Graph
 from timesmith.network._constructors import (
     build_hvg,
     build_nvg,
     build_recurrence_network,
     build_transition_network,
 )
+from timesmith.network.graph import Graph
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +46,9 @@ def _validate_series(y: Any) -> np.ndarray:
     return series
 
 
-def _extract_network_features(graph: Graph, include_degrees: bool = True) -> pd.DataFrame:
+def _extract_network_features(
+    graph: Graph, include_degrees: bool = True
+) -> pd.DataFrame:
     """Extract network features from Graph object.
 
     Args:
@@ -77,7 +78,9 @@ def _extract_network_features(graph: Graph, include_degrees: bool = True) -> pd.
         out_degrees = graph.out_degree_sequence()
         features["avg_in_degree"] = float(np.mean(in_degrees))
         features["avg_out_degree"] = float(np.mean(out_degrees))
-        features["irreversibility_score"] = graph.summary().get("irreversibility_score", 0.0)
+        features["irreversibility_score"] = graph.summary().get(
+            "irreversibility_score", 0.0
+        )
 
     # Create DataFrame with single row
     df = pd.DataFrame([features])
@@ -128,7 +131,9 @@ class HVGFeaturizer(BaseFeaturizer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "HVGFeaturizer":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "HVGFeaturizer":
         """Fit the featurizer (no-op for HVG).
 
         Args:
@@ -216,7 +221,9 @@ class NVGFeaturizer(BaseFeaturizer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "NVGFeaturizer":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "NVGFeaturizer":
         """Fit the featurizer (no-op for NVG).
 
         Args:
@@ -313,7 +320,9 @@ class RecurrenceNetworkFeaturizer(BaseFeaturizer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "RecurrenceNetworkFeaturizer":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "RecurrenceNetworkFeaturizer":
         """Fit the featurizer (no-op for recurrence network).
 
         Args:
@@ -399,7 +408,9 @@ class TransitionNetworkFeaturizer(BaseFeaturizer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "TransitionNetworkFeaturizer":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "TransitionNetworkFeaturizer":
         """Fit the featurizer (no-op for transition network).
 
         Args:

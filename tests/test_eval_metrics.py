@@ -42,4 +42,3 @@ class TestMetrics:
         result = mae(y_true, y_pred)
         # MAE = mean(|1-1.5|, |2-2.5|, |3-2.5|) = mean(0.5, 0.5, 0.5) = 0.5
         assert result == pytest.approx(0.5, abs=0.01)
-

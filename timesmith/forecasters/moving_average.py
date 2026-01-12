@@ -9,7 +9,7 @@ import pandas as pd
 from timesmith.core.base import BaseForecaster
 from timesmith.core.tags import set_tags
 from timesmith.results.forecast import Forecast
-from timesmith.utils.ts_utils import ensure_datetime_index, detect_frequency
+from timesmith.utils.ts_utils import detect_frequency, ensure_datetime_index
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,9 @@ class SimpleMovingAverageForecaster(BaseForecaster):
             requires_fh=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "SimpleMovingAverageForecaster":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "SimpleMovingAverageForecaster":
         """Fit the forecaster (computes moving average).
 
         Args:
@@ -92,7 +94,9 @@ class SimpleMovingAverageForecaster(BaseForecaster):
 
         if isinstance(freq, str):
             next_date = last_date + pd.tseries.frequencies.to_offset(freq)
-            forecast_index = pd.date_range(start=next_date, periods=n_periods, freq=freq)
+            forecast_index = pd.date_range(
+                start=next_date, periods=n_periods, freq=freq
+            )
         else:
             if len(self.train_index_) > 1:
                 avg_delta = self.train_index_[-1] - self.train_index_[-2]
@@ -135,7 +139,9 @@ class ExponentialMovingAverageForecaster(BaseForecaster):
             requires_fh=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "ExponentialMovingAverageForecaster":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "ExponentialMovingAverageForecaster":
         """Fit the forecaster (computes EMA).
 
         Args:
@@ -155,7 +161,9 @@ class ExponentialMovingAverageForecaster(BaseForecaster):
 
         series = ensure_datetime_index(series)
         self.train_index_ = series.index
-        self.last_ema_value_ = series.ewm(alpha=self.alpha, adjust=False).mean().iloc[-1]
+        self.last_ema_value_ = (
+            series.ewm(alpha=self.alpha, adjust=False).mean().iloc[-1]
+        )
 
         self._is_fitted = True
         return self
@@ -189,7 +197,9 @@ class ExponentialMovingAverageForecaster(BaseForecaster):
 
         if isinstance(freq, str):
             next_date = last_date + pd.tseries.frequencies.to_offset(freq)
-            forecast_index = pd.date_range(start=next_date, periods=n_periods, freq=freq)
+            forecast_index = pd.date_range(
+                start=next_date, periods=n_periods, freq=freq
+            )
         else:
             if len(self.train_index_) > 1:
                 avg_delta = self.train_index_[-1] - self.train_index_[-2]
@@ -234,7 +244,9 @@ class WeightedMovingAverageForecaster(BaseForecaster):
             requires_fh=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "WeightedMovingAverageForecaster":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "WeightedMovingAverageForecaster":
         """Fit the forecaster (computes weighted MA).
 
         Args:
@@ -291,7 +303,9 @@ class WeightedMovingAverageForecaster(BaseForecaster):
 
         if isinstance(freq, str):
             next_date = last_date + pd.tseries.frequencies.to_offset(freq)
-            forecast_index = pd.date_range(start=next_date, periods=n_periods, freq=freq)
+            forecast_index = pd.date_range(
+                start=next_date, periods=n_periods, freq=freq
+            )
         else:
             if len(self.train_index_) > 1:
                 avg_delta = self.train_index_[-1] - self.train_index_[-2]
@@ -308,4 +322,3 @@ class WeightedMovingAverageForecaster(BaseForecaster):
         y_pred = pd.Series([self.last_wma_value_] * n_periods, index=forecast_index)
 
         return Forecast(y_pred=y_pred, fh=fh)
-

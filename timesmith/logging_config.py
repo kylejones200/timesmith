@@ -41,9 +41,7 @@ def configure_logging(
     # Validate level
     valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
     if level not in valid_levels:
-        raise ValueError(
-            f"Invalid log level: {level}. Must be one of {valid_levels}"
-        )
+        raise ValueError(f"Invalid log level: {level}. Must be one of {valid_levels}")
 
     log_level = getattr(logging, level)
 
@@ -113,4 +111,3 @@ def get_logger(name: str) -> logging.Logger:
 # Auto-configure on import if environment variable is set
 if os.getenv("TIMESMITH_LOG_LEVEL"):
     configure_logging()
-

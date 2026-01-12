@@ -116,4 +116,3 @@ class TestModelSerialization:
             np.testing.assert_array_almost_equal(
                 original_pred.y_pred, loaded_pred.y_pred
             )
-

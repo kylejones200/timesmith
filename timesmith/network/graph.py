@@ -4,13 +4,15 @@ Primary storage is edges + optional adjacency matrix.
 NetworkX conversion is lazy and optional.
 """
 
+from typing import List, Optional, Tuple
+
 import numpy as np
 from numpy.typing import NDArray
-from typing import Optional, List, Tuple, Union
 
 # Import for type hints only
 try:
     from typing import TYPE_CHECKING
+
     if TYPE_CHECKING:
         import networkx as nx
 except ImportError:
@@ -248,9 +250,13 @@ class Graph:
             total_degrees = in_degrees + out_degrees
 
             stats["avg_in_degree"] = float(np.mean(in_degrees))
-            stats["std_in_degree"] = float(np.std(in_degrees)) if len(in_degrees) > 1 else 0.0
+            stats["std_in_degree"] = (
+                float(np.std(in_degrees)) if len(in_degrees) > 1 else 0.0
+            )
             stats["avg_out_degree"] = float(np.mean(out_degrees))
-            stats["std_out_degree"] = float(np.std(out_degrees)) if len(out_degrees) > 1 else 0.0
+            stats["std_out_degree"] = (
+                float(np.std(out_degrees)) if len(out_degrees) > 1 else 0.0
+            )
 
             # Irreversibility score
             irreversibility = np.zeros(self.n_nodes, dtype=np.float64)

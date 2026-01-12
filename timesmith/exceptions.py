@@ -126,4 +126,3 @@ class UnsupportedOperationError(TimeSmithError):
         super().__init__(
             message, context={"operation": operation, "estimator": estimator_name}
         )
-

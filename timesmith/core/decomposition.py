@@ -4,7 +4,7 @@ Provides trend and seasonality detection and removal for time series analysis.
 """
 
 import logging
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 try:
     from scipy import signal, stats
     from scipy.ndimage import uniform_filter1d
+
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
@@ -51,7 +52,11 @@ def _detect_seasonal_period(data: np.ndarray, max_period: int = 50) -> Optional[
         # Fallback: find peaks manually
         peaks = []
         for i in range(1, min(max_period, len(autocorr) - 1)):
-            if autocorr[i] > 0.3 and autocorr[i] > autocorr[i-1] and autocorr[i] > autocorr[i+1]:
+            if (
+                autocorr[i] > 0.3
+                and autocorr[i] > autocorr[i - 1]
+                and autocorr[i] > autocorr[i + 1]
+            ):
                 peaks.append(i)
         peaks = np.array(peaks)
     else:
@@ -64,9 +69,7 @@ def _detect_seasonal_period(data: np.ndarray, max_period: int = 50) -> Optional[
     return None
 
 
-def detect_trend(
-    y: SeriesLike, method: str = "linear"
-) -> Dict[str, Any]:
+def detect_trend(y: SeriesLike, method: str = "linear") -> Dict[str, Any]:
     """Detect trend in time series data.
 
     Args:
@@ -132,7 +135,9 @@ def detect_trend(
             except Exception as e:
                 logger.warning(f"Theil-Sen failed: {e}, falling back to linear")
                 # Fall back to linear
-                slope, intercept, r_value, _, _ = np.polyfit(time_arr, y_arr, 1, full=False)
+                slope, intercept, r_value, _, _ = np.polyfit(
+                    time_arr, y_arr, 1, full=False
+                )
                 trend = slope * time_arr + intercept
                 return {
                     "trend": trend,
@@ -159,7 +164,7 @@ def detect_trend(
         window = max(3, len(y_arr) // 10)
         if not HAS_SCIPY:
             # Fallback: simple moving average
-            trend = np.convolve(y_arr, np.ones(window)/window, mode='same')
+            trend = np.convolve(y_arr, np.ones(window) / window, mode="same")
         else:
             trend = uniform_filter1d(y_arr, size=window, mode="nearest")
         # Calculate trend strength as variance reduction
@@ -173,12 +178,12 @@ def detect_trend(
         }
 
     else:
-        raise ValueError(f"Unknown method: {method}. Use 'linear', 'theil_sen', 'polynomial', or 'moving_average'")
+        raise ValueError(
+            f"Unknown method: {method}. Use 'linear', 'theil_sen', 'polynomial', or 'moving_average'"
+        )
 
 
-def detect_seasonality(
-    y: SeriesLike, max_period: int = 50
-) -> Dict[str, Any]:
+def detect_seasonality(y: SeriesLike, max_period: int = 50) -> Dict[str, Any]:
     """Detect seasonality in time series data.
 
     Args:
@@ -274,7 +279,9 @@ class DecomposeTransformer(BaseTransformer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "DecomposeTransformer":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "DecomposeTransformer":
         """Fit the decomposition transformer.
 
         Args:
@@ -338,7 +345,9 @@ class DecomposeTransformer(BaseTransformer):
             residual = np.asarray(y)
 
         # Reconstruct: residual + trend + seasonal
-        reconstructed = residual + self.components_["trend"] + self.components_["seasonal"]
+        reconstructed = (
+            residual + self.components_["trend"] + self.components_["seasonal"]
+        )
         return pd.Series(reconstructed)
 
     def _decompose(self) -> Dict[str, np.ndarray]:
@@ -354,7 +363,9 @@ class DecomposeTransformer(BaseTransformer):
         # Extract trend using moving average
         if not HAS_SCIPY:
             # Fallback: simple moving average
-            trend = np.convolve(self.y_, np.ones(trend_window)/trend_window, mode='same')
+            trend = np.convolve(
+                self.y_, np.ones(trend_window) / trend_window, mode="same"
+            )
         else:
             trend = uniform_filter1d(self.y_, size=trend_window, mode="nearest")
 
@@ -425,7 +436,9 @@ class DetrendTransformer(BaseTransformer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "DetrendTransformer":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "DetrendTransformer":
         """Fit the detrend transformer.
 
         Args:
@@ -515,7 +528,9 @@ class DeseasonalizeTransformer(BaseTransformer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "DeseasonalizeTransformer":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "DeseasonalizeTransformer":
         """Fit the deseasonalize transformer.
 
         Args:
@@ -612,4 +627,3 @@ class DeseasonalizeTransformer(BaseTransformer):
 
         reconstructed = deseasonalized + self.seasonal_
         return pd.Series(reconstructed)
-

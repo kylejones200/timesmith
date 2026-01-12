@@ -3,9 +3,7 @@
 import pytest
 
 from timesmith.core.base import (
-    BaseDetector,
     BaseEstimator,
-    BaseFeaturizer,
     BaseForecaster,
     BaseObject,
     BaseTransformer,
@@ -101,11 +99,13 @@ class TestBaseTransformer:
         class TestTransformer(BaseTransformer):
             def transform(self, y, X=None):
                 import numpy as np
+
                 return np.array(y) * 2
 
         trans = TestTransformer()
         result = trans.fit_transform([1, 2, 3])
         import numpy as np
+
         assert np.array_equal(result, np.array([2, 4, 6]))
         assert trans.is_fitted is True
 
@@ -123,4 +123,3 @@ class TestBaseForecaster:
         forecaster.fit([1, 2, 3])
         with pytest.raises(NotImplementedError):
             forecaster.predict(fh=1)
-

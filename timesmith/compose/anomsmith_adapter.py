@@ -18,13 +18,13 @@ import pandas as pd
 
 from timesmith.core.base import BaseDetector
 from timesmith.core.tags import set_tags
-from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
 
 # Try to import anomsmith
 try:
     import anomsmith as am
+
     HAS_ANOMSMITH = True
 except ImportError:
     HAS_ANOMSMITH = False
@@ -48,10 +48,10 @@ class AnomSmithAdapter(BaseDetector):
     Example:
         >>> import timesmith as ts
         >>> import anomsmith as am
-        >>> 
+        >>>
         >>> # Create AnomSmith detector
         >>> am_detector = am.SomeDetector(threshold=3.0)
-        >>> 
+        >>>
         >>> # Wrap it for TimeSmith
         >>> detector = ts.AnomSmithAdapter(am_detector)
         >>> detector.fit(y)
@@ -68,11 +68,13 @@ class AnomSmithAdapter(BaseDetector):
 
         Args:
             anomsmith_detector: An AnomSmith detector instance.
-            detector_name: Name of AnomSmith detector to create (if detector not provided).
-            detector_params: Parameters for creating detector (if using detector_name).
+            detector_name: Name of AnomSmith detector to create
+                (if detector not provided).
+            detector_params: Parameters for creating detector
+                (if using detector_name).
         """
         super().__init__()
-        
+
         if not HAS_ANOMSMITH:
             raise ImportError(
                 "anomsmith is required for AnomSmithAdapter. "
@@ -100,7 +102,9 @@ class AnomSmithAdapter(BaseDetector):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "AnomSmithAdapter":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "AnomSmithAdapter":
         """Fit the AnomSmith detector.
 
         Args:
@@ -123,9 +127,9 @@ class AnomSmithAdapter(BaseDetector):
             y_for_am = np.asarray(y)
 
         # Fit AnomSmith detector
-        if hasattr(self.anomsmith_detector, 'fit'):
+        if hasattr(self.anomsmith_detector, "fit"):
             self.anomsmith_detector.fit(y_for_am, **fit_params)
-        elif hasattr(self.anomsmith_detector, 'train'):
+        elif hasattr(self.anomsmith_detector, "train"):
             self.anomsmith_detector.train(y_for_am, **fit_params)
 
         # Store original data for compatibility
@@ -160,14 +164,14 @@ class AnomSmithAdapter(BaseDetector):
             index = pd.RangeIndex(len(y_for_am))
 
         # Predict using AnomSmith detector
-        if hasattr(self.anomsmith_detector, 'predict'):
+        if hasattr(self.anomsmith_detector, "predict"):
             anomalies = self.anomsmith_detector.predict(y_for_am)
-        elif hasattr(self.anomsmith_detector, 'detect'):
+        elif hasattr(self.anomsmith_detector, "detect"):
             anomalies = self.anomsmith_detector.detect(y_for_am)
-        elif hasattr(self.anomsmith_detector, 'score'):
+        elif hasattr(self.anomsmith_detector, "score"):
             # If only score is available, threshold it
             scores = self.anomsmith_detector.score(y_for_am)
-            threshold = getattr(self.anomsmith_detector, 'threshold', 3.0)
+            threshold = getattr(self.anomsmith_detector, "threshold", 3.0)
             anomalies = scores > threshold
         else:
             raise AttributeError(
@@ -180,7 +184,7 @@ class AnomSmithAdapter(BaseDetector):
         else:
             anomalies = np.asarray([bool(x) for x in anomalies])
 
-        return pd.Series(anomalies, index=index, name='anomaly')
+        return pd.Series(anomalies, index=index, name="anomaly")
 
     def score(self, y: Any, X: Optional[Any] = None) -> pd.Series:
         """Get anomaly scores from AnomSmith detector.
@@ -209,9 +213,9 @@ class AnomSmithAdapter(BaseDetector):
             index = pd.RangeIndex(len(y_for_am))
 
         # Get scores from AnomSmith detector
-        if hasattr(self.anomsmith_detector, 'score'):
+        if hasattr(self.anomsmith_detector, "score"):
             scores = self.anomsmith_detector.score(y_for_am)
-        elif hasattr(self.anomsmith_detector, 'predict_proba'):
+        elif hasattr(self.anomsmith_detector, "predict_proba"):
             # Use probability of anomaly class
             proba = self.anomsmith_detector.predict_proba(y_for_am)
             if proba.ndim > 1:
@@ -223,5 +227,4 @@ class AnomSmithAdapter(BaseDetector):
             anomalies = self.predict(y, X)
             scores = anomalies.astype(float)
 
-        return pd.Series(scores, index=index, name='anomaly_score')
-
+        return pd.Series(scores, index=index, name="anomaly_score")

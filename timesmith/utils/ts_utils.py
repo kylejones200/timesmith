@@ -6,7 +6,7 @@ They operate on data directly and don't maintain state.
 
 import logging
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import pandas as pd
 
@@ -41,7 +41,7 @@ def load_ts_data(
 
 
 def ensure_datetime_index(
-    data: Union[pd.Series, pd.DataFrame]
+    data: Union[pd.Series, pd.DataFrame],
 ) -> Union[pd.Series, pd.DataFrame]:
     """Ensure data has datetime index.
 
@@ -64,9 +64,7 @@ def ensure_datetime_index(
         return data
 
 
-def resample_ts(
-    data: pd.Series, freq: str = "D", method: str = "mean"
-) -> pd.Series:
+def resample_ts(data: pd.Series, freq: str = "D", method: str = "mean") -> pd.Series:
     """Resample time series to different frequency.
 
     Args:
@@ -282,4 +280,3 @@ def detect_anomalies_mad(
     anomalies = modified_z_score > threshold_std
 
     return anomalies.fillna(False)
-

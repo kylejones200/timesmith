@@ -7,7 +7,6 @@ import numpy as np
 
 from timesmith.core.base import BaseDetector
 from timesmith.core.tags import set_tags
-from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +49,9 @@ class VotingEnsembleDetector(BaseDetector):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "VotingEnsembleDetector":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "VotingEnsembleDetector":
         """Fit all detectors in the ensemble.
 
         Args:
@@ -117,9 +118,8 @@ class VotingEnsembleDetector(BaseDetector):
         n_anomalies = flags.sum()
         logger.info(
             f"Voting ensemble detected {n_anomalies} anomalies "
-            f"({n_anomalies/len(flags)*100:.1f}%) "
+            f"({n_anomalies / len(flags) * 100:.1f}%) "
             f"with threshold={threshold}/{len(self.detectors)}"
         )
 
         return flags
-

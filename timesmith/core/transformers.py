@@ -7,7 +7,7 @@ import pandas as pd
 
 from timesmith.core.base import BaseTransformer
 from timesmith.core.tags import set_tags
-from timesmith.utils.ts_utils import ensure_datetime_index, detect_frequency
+from timesmith.utils.ts_utils import detect_frequency, ensure_datetime_index
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,9 @@ class OutlierRemover(BaseTransformer):
             requires_sorted_index=False,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "OutlierRemover":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "OutlierRemover":
         """Fit the transformer (computes IQR bounds).
 
         Args:
@@ -105,7 +107,9 @@ class MissingValueFiller(BaseTransformer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "MissingValueFiller":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "MissingValueFiller":
         """Fit the transformer (no-op for filling).
 
         Args:
@@ -243,7 +247,9 @@ class MissingDateFiller(BaseTransformer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "MissingDateFiller":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "MissingDateFiller":
         """Fit the transformer (detects frequency).
 
         Args:
@@ -308,4 +314,3 @@ class MissingDateFiller(BaseTransformer):
             return filled
         else:
             return filled.to_frame()
-

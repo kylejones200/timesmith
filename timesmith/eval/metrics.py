@@ -240,4 +240,3 @@ def _to_array(data: Any) -> np.ndarray:
         return data
     else:
         return np.array(data)
-

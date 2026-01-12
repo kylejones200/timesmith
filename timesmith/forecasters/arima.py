@@ -9,7 +9,7 @@ import pandas as pd
 from timesmith.core.base import BaseForecaster
 from timesmith.core.tags import set_tags
 from timesmith.results.forecast import Forecast
-from timesmith.utils.ts_utils import ensure_datetime_index, detect_frequency
+from timesmith.utils.ts_utils import detect_frequency, ensure_datetime_index
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +81,9 @@ class ARIMAForecaster(BaseForecaster):
             requires_fh=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "ARIMAForecaster":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "ARIMAForecaster":
         """Fit ARIMA model to time series.
 
         Args:
@@ -93,7 +95,9 @@ class ARIMAForecaster(BaseForecaster):
             Self for method chaining.
         """
         if X is not None:
-            logger.warning("Exogenous variables (X) not yet supported for ARIMAForecaster")
+            logger.warning(
+                "Exogenous variables (X) not yet supported for ARIMAForecaster"
+            )
 
         if isinstance(y, pd.Series):
             series = y
@@ -142,7 +146,9 @@ class ARIMAForecaster(BaseForecaster):
         self._check_is_fitted()
 
         if X is not None:
-            logger.warning("Exogenous variables (X) not yet supported for ARIMAForecaster")
+            logger.warning(
+                "Exogenous variables (X) not yet supported for ARIMAForecaster"
+            )
 
         # Convert fh to integer
         if isinstance(fh, (list, np.ndarray)):
@@ -166,7 +172,9 @@ class ARIMAForecaster(BaseForecaster):
         # Create forecast index
         if isinstance(freq, str):
             next_date = last_date + pd.tseries.frequencies.to_offset(freq)
-            forecast_index = pd.date_range(start=next_date, periods=n_periods, freq=freq)
+            forecast_index = pd.date_range(
+                start=next_date, periods=n_periods, freq=freq
+            )
         else:
             # Fallback: estimate from spacing
             if len(self.train_index_) > 1:
@@ -192,7 +200,11 @@ class ARIMAForecaster(BaseForecaster):
         return Forecast(y_pred=y_pred, fh=fh, y_int=y_int)
 
     def predict_interval(
-        self, fh: Any, X: Optional[Any] = None, coverage: float = 0.9, **predict_params: Any
+        self,
+        fh: Any,
+        X: Optional[Any] = None,
+        coverage: float = 0.9,
+        **predict_params: Any,
     ) -> Forecast:
         """Generate forecast with prediction intervals.
 
@@ -218,4 +230,3 @@ class ARIMAForecaster(BaseForecaster):
         """
         self._check_is_fitted()
         return self.order_
-

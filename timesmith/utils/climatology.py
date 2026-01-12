@@ -29,7 +29,9 @@ def compute_climatology(
     elif isinstance(y, pd.DataFrame) and y.shape[1] == 1:
         series = y.iloc[:, 0]
     else:
-        raise ValueError("y must be Series or single-column DataFrame with datetime index")
+        raise ValueError(
+            "y must be Series or single-column DataFrame with datetime index"
+        )
 
     if not isinstance(series.index, pd.DatetimeIndex):
         raise ValueError("Data must have datetime index for climatology analysis")
@@ -52,7 +54,9 @@ def compute_climatology(
     monthly_climatology = series_clean.groupby(series_clean.index.month).mean()
 
     # Annual cycle characteristics
-    annual_cycle_amplitude = float(monthly_climatology.max() - monthly_climatology.min())
+    annual_cycle_amplitude = float(
+        monthly_climatology.max() - monthly_climatology.min()
+    )
     annual_cycle_phase = int(monthly_climatology.idxmax())
 
     # Seasonal statistics
@@ -121,7 +125,9 @@ def compute_anomalies(
     elif isinstance(y, pd.DataFrame) and y.shape[1] == 1:
         series = y.iloc[:, 0]
     else:
-        raise ValueError("y must be Series or single-column DataFrame with datetime index")
+        raise ValueError(
+            "y must be Series or single-column DataFrame with datetime index"
+        )
 
     if not isinstance(series.index, pd.DatetimeIndex):
         raise ValueError("Data must have datetime index")
@@ -186,9 +192,7 @@ def detect_extreme_events(
         wet_threshold = mean_val + threshold_value * std_val
     elif threshold_type == "absolute":
         dry_threshold = threshold_value
-        wet_threshold = (
-            series_clean.max() - threshold_value
-        )  # Arbitrary for wet events
+        wet_threshold = series_clean.max() - threshold_value  # Arbitrary for wet events
     else:
         raise ValueError(
             "threshold_type must be 'percentile', 'std_dev', or 'absolute'"
@@ -205,7 +209,9 @@ def detect_extreme_events(
                     "value": float(value),
                     "type": "dry",
                     "severity": float((dry_threshold - value) / series_clean.std()),
-                    "percentile": float(stats.percentileofscore(series_clean.values, value)),
+                    "percentile": float(
+                        stats.percentileofscore(series_clean.values, value)
+                    ),
                 }
             )
         elif value >= wet_threshold:
@@ -215,9 +221,10 @@ def detect_extreme_events(
                     "value": float(value),
                     "type": "wet",
                     "severity": float((value - wet_threshold) / series_clean.std()),
-                    "percentile": float(stats.percentileofscore(series_clean.values, value)),
+                    "percentile": float(
+                        stats.percentileofscore(series_clean.values, value)
+                    ),
                 }
             )
 
     return pd.DataFrame(extreme_events)
-

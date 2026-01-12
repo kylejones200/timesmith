@@ -50,4 +50,3 @@ class ForecastLike(Protocol):
     y_int: Optional[object]
     fh: object
     metadata: Optional[dict]
-

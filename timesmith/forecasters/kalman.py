@@ -14,8 +14,9 @@ from timesmith.utils.ts_utils import ensure_datetime_index
 logger = logging.getLogger(__name__)
 
 try:
-    from filterpy.kalman import KalmanFilter
     from filterpy.common import Q_discrete_white_noise
+    from filterpy.kalman import KalmanFilter
+
     HAS_FILTERPY = True
 except ImportError:
     KalmanFilter = None
@@ -87,10 +88,7 @@ class KalmanFilterForecaster(BaseForecaster):
 
     def _create_kalman_filter(self) -> KalmanFilter:
         """Create and configure Kalman filter."""
-        kf = KalmanFilter(
-            dim_x=self.state_dimension,
-            dim_z=self.measurement_dimension
-        )
+        kf = KalmanFilter(dim_x=self.state_dimension, dim_z=self.measurement_dimension)
 
         # Set initial state
         if self.initial_state is not None:
@@ -127,7 +125,9 @@ class KalmanFilterForecaster(BaseForecaster):
 
         return kf
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "KalmanFilterForecaster":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "KalmanFilterForecaster":
         """Fit Kalman filter to data.
 
         Args:
@@ -139,7 +139,9 @@ class KalmanFilterForecaster(BaseForecaster):
             Self for method chaining.
         """
         if X is not None:
-            logger.warning("Exogenous variables (X) not yet supported for KalmanFilterForecaster")
+            logger.warning(
+                "Exogenous variables (X) not yet supported for KalmanFilterForecaster"
+            )
 
         if isinstance(y, pd.Series):
             series = y
@@ -187,7 +189,9 @@ class KalmanFilterForecaster(BaseForecaster):
         self._check_is_fitted()
 
         if X is not None:
-            logger.warning("Exogenous variables (X) not yet supported for KalmanFilterForecaster")
+            logger.warning(
+                "Exogenous variables (X) not yet supported for KalmanFilterForecaster"
+            )
 
         # Convert fh to integer
         if isinstance(fh, (list, np.ndarray)):
@@ -225,7 +229,11 @@ class KalmanFilterForecaster(BaseForecaster):
         return Forecast(y_pred=y_pred, fh=fh)
 
     def predict_interval(
-        self, fh: Any, X: Optional[Any] = None, coverage: float = 0.9, **predict_params: Any
+        self,
+        fh: Any,
+        X: Optional[Any] = None,
+        coverage: float = 0.9,
+        **predict_params: Any,
     ) -> Forecast:
         """Generate forecast with prediction intervals.
 
@@ -251,6 +259,7 @@ class KalmanFilterForecaster(BaseForecaster):
         current_cov = self.last_covariance_.copy()
 
         from scipy import stats
+
         z_score = stats.norm.ppf((1 + coverage) / 2)
 
         for _ in range(len(forecast.y_pred)):
@@ -276,4 +285,3 @@ class KalmanFilterForecaster(BaseForecaster):
         )
 
         return Forecast(y_pred=forecast.y_pred, fh=fh, y_int=y_int)
-

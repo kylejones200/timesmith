@@ -3,33 +3,14 @@
 __version__ = "0.1.1"
 
 # Exceptions
-from timesmith.exceptions import (
-    ConfigurationError,
-    DataError,
-    ForecastError,
-    NotFittedError,
-    PipelineError,
-    TimeSmithError,
-    TransformError,
-    UnsupportedOperationError,
-    ValidationError,
-)
-
-# Serialization
-from timesmith.serialization import load_model, save_model
-
-# Typing
-from timesmith.typing import (
-    ForecastLike,
-    PanelLike,
-    SeriesLike,
-    TableLike,
-    assert_panel,
-    assert_series,
-    assert_table,
-    is_panel,
-    is_series,
-    is_table,
+# Compose
+from timesmith.compose import (
+    Adapter,
+    FeatureUnion,
+    ForecasterPipeline,
+    Pipeline,
+    make_forecaster_pipeline,
+    make_pipeline,
 )
 
 # Core
@@ -45,48 +26,66 @@ from timesmith.core import (
     validate_input,
 )
 
-# Compose
-from timesmith.compose import (
-    Adapter,
-    FeatureUnion,
-    ForecasterPipeline,
-    Pipeline,
-    make_forecaster_pipeline,
-    make_pipeline,
-)
-
-# Note: AnomSmith adapter and compatibility utilities are NOT imported by default
-# to avoid circular imports. Timesmith (foundation) must never import downstream repos.
-# Users can explicitly import if needed:
-#   from timesmith.compose.anomsmith_adapter import AnomSmithAdapter
-#   from timesmith.utils.anomsmith_compat import convert_to_anomsmith_format, ...
-
-# Tasks
-from timesmith.tasks import DetectTask, ForecastTask
-
 # Eval
 from timesmith.eval import (
     ExpandingWindowSplit,
-    SlidingWindowSplit,
     ModelComparison,
     ModelResult,
+    SlidingWindowSplit,
     backtest_forecaster,
     bias,
     compare_models,
     mae,
     mape,
     rmse,
-    ubrmse,
     summarize_backtest,
+    ubrmse,
+)
+from timesmith.exceptions import (
+    ConfigurationError,
+    DataError,
+    ForecastError,
+    NotFittedError,
+    PipelineError,
+    TimeSmithError,
+    TransformError,
+    UnsupportedOperationError,
+    ValidationError,
 )
 
 # Results
 from timesmith.results import BacktestResult, Forecast
 
+# Serialization
+from timesmith.serialization import load_model, save_model
+
+# Note: AnomSmith adapter and compatibility utilities are NOT imported by default
+# to avoid circular imports. Timesmith (foundation) must never import downstream repos.
+# Users can explicitly import if needed:
+#   from timesmith.compose.anomsmith_adapter import AnomSmithAdapter
+#   from timesmith.utils.anomsmith_compat import convert_to_anomsmith_format, ...
+# Tasks
+from timesmith.tasks import DetectTask, ForecastTask
+
+# Typing
+from timesmith.typing import (
+    ForecastLike,
+    PanelLike,
+    SeriesLike,
+    TableLike,
+    assert_panel,
+    assert_series,
+    assert_table,
+    is_panel,
+    is_series,
+    is_table,
+)
+
 # Utils
 from timesmith.utils import (
     autocorrelation,
     autocorrelation_plot_data,
+    black_scholes_monte_carlo,
     bootstrap_confidence_intervals,
     correlation_distance,
     create_sequences,
@@ -100,7 +99,6 @@ from timesmith.utils import (
     load_ts_data,
     manhattan_distance,
     monte_carlo_simulation,
-    black_scholes_monte_carlo,
     parametric_confidence_intervals,
     partial_autocorrelation,
     plot_monte_carlo,
@@ -111,14 +109,16 @@ from timesmith.utils import (
 
 # Optional stationarity tests
 try:
-    from timesmith.utils.stationarity import test_stationarity, is_stationary
+    from timesmith.utils.stationarity import is_stationary, test_stationarity  # noqa: F401
+
     HAS_STATIONARITY = True
 except ImportError:
     HAS_STATIONARITY = False
 
 # Optional data loaders
 try:
-    from timesmith.datasets import load_fred, load_yahoo
+    from timesmith.datasets import load_fred, load_yahoo  # noqa: F401
+
     HAS_DATA_LOADERS = True
 except ImportError:
     HAS_DATA_LOADERS = False
@@ -127,57 +127,30 @@ except ImportError:
 HAS_PLOTTING = False
 try:
     from timesmith.utils.plotting import (
-        plot_timeseries,
-        plot_forecast,
-        plot_residuals,
-        plot_multiple_series,
-        plot_autocorrelation,
-        plot_monte_carlo_paths,
         HAS_PLOTSMITH,
+        plot_autocorrelation,  # noqa: F401
+        plot_forecast,  # noqa: F401
+        plot_monte_carlo_paths,  # noqa: F401
+        plot_multiple_series,  # noqa: F401
+        plot_residuals,  # noqa: F401
+        plot_timeseries,  # noqa: F401
     )
+
     HAS_PLOTTING = HAS_PLOTSMITH
 except ImportError:
     pass
 
 # Climatology utilities
-from timesmith.utils.climatology import (
-    compute_climatology,
-    compute_anomalies,
-    detect_extreme_events,
-)
-
-# Network
-from timesmith.network import (
-    Graph,
-    HVGFeaturizer,
-    NVGFeaturizer,
-    RecurrenceNetworkFeaturizer,
-    TransitionNetworkFeaturizer,
-    compute_clustering,
-    compute_modularity,
-    compute_path_lengths,
-    graph_summary,
-    network_metrics,
-    transfer_entropy,
-    conditional_transfer_entropy,
-    transfer_entropy_network,
-    TransferEntropyDetector,
-    build_windows,
-    ts_to_windows,
-    MultiscaleGraphs,
-    coarse_grain,
-    directed_3node_motifs,
-    undirected_4node_motifs,
-    node_roles,
-    net_knn,
-    net_enn,
-    generate_surrogate,
-    compute_network_metric_significance,
-    NetworkSignificanceResult,
+from timesmith.utils.climatology import (  # noqa: E402
+    compute_climatology,  # noqa: F401
+    compute_anomalies,  # noqa: F401
+    detect_extreme_events,  # noqa: F401
 )
 
 # Core Featurizers and Transformers
-from timesmith.core import (
+from timesmith.core import (  # noqa: E402
+    BayesianChangePointDetector,
+    CUSUMDetector,  # noqa: F401
     DecomposeTransformer,
     DeseasonalizeTransformer,
     DetrendTransformer,
@@ -187,27 +160,56 @@ from timesmith.core import (
     MissingValueFiller,
     OutlierRemover,
     PELTDetector,
-    BayesianChangePointDetector,
-    CUSUMDetector,
     Resampler,
-    VotingEnsembleDetector,
     RollingFeaturizer,
     SeasonalFeaturizer,
     TimeFeaturizer,
+    VotingEnsembleDetector,  # noqa: F401
     detect_seasonality,
     detect_trend,
     preprocess_for_changepoint,
 )
 
+# Network
+from timesmith.network import (  # noqa: E402
+    Graph,
+    HVGFeaturizer,
+    MultiscaleGraphs,
+    NetworkSignificanceResult,
+    NVGFeaturizer,
+    RecurrenceNetworkFeaturizer,
+    TransferEntropyDetector,
+    TransitionNetworkFeaturizer,
+    build_windows,
+    coarse_grain,
+    compute_clustering,
+    compute_modularity,
+    compute_network_metric_significance,
+    compute_path_lengths,
+    conditional_transfer_entropy,
+    directed_3node_motifs,
+    generate_surrogate,
+    graph_summary,
+    net_enn,
+    net_knn,
+    network_metrics,
+    node_roles,
+    transfer_entropy,
+    transfer_entropy_network,
+    ts_to_windows,
+    undirected_4node_motifs,
+)
+
 # Optional filters
 try:
-    from timesmith.core.filters import ButterworthFilter, SavitzkyGolayFilter
+    from timesmith.core.filters import ButterworthFilter, SavitzkyGolayFilter  # noqa: F401
+
     HAS_FILTERS = True
 except ImportError:
     HAS_FILTERS = False
 
 # Forecasters
-from timesmith.forecasters import (
+from timesmith.forecasters import (  # noqa: E402
     ARIMAForecaster,
     BlackScholesMonteCarloForecaster,
     ExponentialMovingAverageForecaster,
@@ -219,39 +221,45 @@ from timesmith.forecasters import (
 
 # Optional forecasters
 try:
-    from timesmith.forecasters.prophet import ProphetForecaster
+    from timesmith.forecasters.prophet import ProphetForecaster  # noqa: F401
+
     HAS_PROPHET = True
 except ImportError:
     HAS_PROPHET = False
 
 try:
-    from timesmith.forecasters.var import VARForecaster
+    from timesmith.forecasters.var import VARForecaster  # noqa: F401
+
     HAS_VAR = True
 except ImportError:
     HAS_VAR = False
 
 try:
-    from timesmith.forecasters.lstm import LSTMForecaster
+    from timesmith.forecasters.lstm import LSTMForecaster  # noqa: F401
+
     HAS_LSTM = True
 except ImportError:
     HAS_LSTM = False
 
 try:
-    from timesmith.forecasters.kalman import KalmanFilterForecaster
+    from timesmith.forecasters.kalman import KalmanFilterForecaster  # noqa: F401
+
     HAS_KALMAN = True
 except ImportError:
     HAS_KALMAN = False
 
 # Optional Bayesian forecaster
 try:
-    from timesmith.forecasters.bayesian import BayesianForecaster
+    from timesmith.forecasters.bayesian import BayesianForecaster  # noqa: F401
+
     HAS_BAYESIAN = True
 except ImportError:
     HAS_BAYESIAN = False
 
 # Optional Ensemble forecaster
 try:
-    from timesmith.forecasters.ensemble import EnsembleForecaster
+    from timesmith.forecasters.ensemble import EnsembleForecaster  # noqa: F401
+
     HAS_ENSEMBLE = True
 except ImportError:
     HAS_ENSEMBLE = False
@@ -326,6 +334,8 @@ __all__ = [
     "monte_carlo_simulation",
     "black_scholes_monte_carlo",
     "plot_monte_carlo",
+    "create_sequences",
+    "create_sequences_with_exog",
     # Plotting utilities (if plotsmith available)
     "autocorrelation",
     "partial_autocorrelation",
@@ -404,14 +414,16 @@ __all__ = [
 
 # Conditionally add plotting functions
 if HAS_PLOTTING:
-    __all__.extend([
-        "plot_timeseries",
-        "plot_forecast",
-        "plot_residuals",
-        "plot_multiple_series",
-        "plot_autocorrelation",
-        "plot_monte_carlo_paths",
-    ])
+    __all__.extend(
+        [
+            "plot_timeseries",
+            "plot_forecast",
+            "plot_residuals",
+            "plot_multiple_series",
+            "plot_autocorrelation",
+            "plot_monte_carlo_paths",
+        ]
+    )
 
 # Conditionally add optional components
 if HAS_BAYESIAN:
@@ -440,4 +452,3 @@ if HAS_STATIONARITY:
 
 if HAS_DATA_LOADERS:
     __all__.extend(["load_fred", "load_yahoo"])
-

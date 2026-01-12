@@ -5,19 +5,24 @@ storing only time series of stats (not full graphs).
 """
 
 import logging
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 import numpy as np
-import pandas as pd
 
-from timesmith.network._constructors import build_hvg, build_nvg, build_recurrence_network, build_transition_network
+from timesmith.network._constructors import (
+    build_hvg,
+    build_nvg,
+    build_recurrence_network,
+    build_transition_network,
+)
 from timesmith.network.graph import Graph
-from timesmith.network.metrics import graph_summary
 
 logger = logging.getLogger(__name__)
 
 
-def ts_to_windows(x: np.ndarray, width: int, by: int = 1, start: int = 0, end: Optional[int] = None) -> np.ndarray:
+def ts_to_windows(
+    x: np.ndarray, width: int, by: int = 1, start: int = 0, end: Optional[int] = None
+) -> np.ndarray:
     """Extract sliding windows from a time series.
 
     Args:
@@ -45,7 +50,7 @@ def ts_to_windows(x: np.ndarray, width: int, by: int = 1, start: int = 0, end: O
         raise ValueError(f"by must be positive, got {by}")
 
     if start < 0 or start >= n:
-        raise ValueError(f"start must be in [0, {n-1}], got {start}")
+        raise ValueError(f"start must be in [0, {n - 1}], got {start}")
 
     if end <= start or end > n:
         raise ValueError(f"end must be in ({start}, {n}], got {end}")
@@ -57,7 +62,9 @@ def ts_to_windows(x: np.ndarray, width: int, by: int = 1, start: int = 0, end: O
     n_windows = (end - start - width) // by + 1
 
     if n_windows <= 0:
-        raise ValueError(f"No windows possible with width={width}, by={by}, start={start}, end={end}")
+        raise ValueError(
+            f"No windows possible with width={width}, by={by}, start={start}, end={end}"
+        )
 
     # Extract windows (vectorized using advanced indexing)
     window_starts = start + np.arange(n_windows) * by
@@ -73,7 +80,7 @@ def build_windows(
     step: int = 1,
     method: str = "hvg",
     output: str = "stats",
-    **method_kwargs
+    **method_kwargs,
 ) -> Dict[str, np.ndarray]:
     """Build graph statistics per window (memory efficient for large series).
 
@@ -97,47 +104,49 @@ def build_windows(
 
     # Initialize result storage
     result = {
-        'n_nodes': np.zeros(n_windows, dtype=np.int64),
-        'n_edges': np.zeros(n_windows, dtype=np.int64),
-        'avg_degree': np.zeros(n_windows, dtype=np.float64),
-        'std_degree': np.zeros(n_windows, dtype=np.float64),
-        'density': np.zeros(n_windows, dtype=np.float64),
+        "n_nodes": np.zeros(n_windows, dtype=np.int64),
+        "n_edges": np.zeros(n_windows, dtype=np.int64),
+        "avg_degree": np.zeros(n_windows, dtype=np.float64),
+        "std_degree": np.zeros(n_windows, dtype=np.float64),
+        "density": np.zeros(n_windows, dtype=np.float64),
     }
 
     # Dispatch dictionary for method selection (more Pythonic)
     method_builders = {
         "hvg": lambda w: build_hvg(
             w,
-            weighted=method_kwargs.get('weighted', False),
-            limit=method_kwargs.get('limit'),
-            directed=method_kwargs.get('directed', False),
+            weighted=method_kwargs.get("weighted", False),
+            limit=method_kwargs.get("limit"),
+            directed=method_kwargs.get("directed", False),
         ),
         "nvg": lambda w: build_nvg(
             w,
-            weighted=method_kwargs.get('weighted', False),
-            limit=method_kwargs.get('limit'),
-            directed=method_kwargs.get('directed', False),
+            weighted=method_kwargs.get("weighted", False),
+            limit=method_kwargs.get("limit"),
+            directed=method_kwargs.get("directed", False),
         ),
         "recurrence": lambda w: build_recurrence_network(
             w,
-            threshold=method_kwargs.get('threshold'),
-            embedding_dimension=method_kwargs.get('embedding_dimension'),
-            time_delay=method_kwargs.get('time_delay', 1),
-            metric=method_kwargs.get('metric', 'euclidean'),
-            rule=method_kwargs.get('rule'),
-            k=method_kwargs.get('k'),
+            threshold=method_kwargs.get("threshold"),
+            embedding_dimension=method_kwargs.get("embedding_dimension"),
+            time_delay=method_kwargs.get("time_delay", 1),
+            metric=method_kwargs.get("metric", "euclidean"),
+            rule=method_kwargs.get("rule"),
+            k=method_kwargs.get("k"),
         ),
         "transition": lambda w: build_transition_network(
             w,
-            n_bins=method_kwargs.get('n_bins', 10),
-            order=method_kwargs.get('order', 1),
-            symbolizer=method_kwargs.get('symbolizer'),
+            n_bins=method_kwargs.get("n_bins", 10),
+            order=method_kwargs.get("order", 1),
+            symbolizer=method_kwargs.get("symbolizer"),
         ),
     }
 
     builder = method_builders.get(method.lower())
     if builder is None:
-        raise ValueError(f"Unknown method: {method}. Must be one of {list(method_builders.keys())}")
+        raise ValueError(
+            f"Unknown method: {method}. Must be one of {list(method_builders.keys())}"
+        )
 
     # Build network for each window
     for i, window_data in enumerate(windows):
@@ -158,20 +167,19 @@ def build_windows(
 
             stats = graph.summary()
 
-            result['n_nodes'][i] = stats['n_nodes']
-            result['n_edges'][i] = stats['n_edges']
-            result['avg_degree'][i] = stats['avg_degree']
-            result['std_degree'][i] = stats.get('std_degree', 0.0)
-            result['density'][i] = stats['density']
+            result["n_nodes"][i] = stats["n_nodes"]
+            result["n_edges"][i] = stats["n_edges"]
+            result["avg_degree"][i] = stats["avg_degree"]
+            result["std_degree"][i] = stats.get("std_degree", 0.0)
+            result["density"][i] = stats["density"]
 
         except Exception as e:
             # Handle errors gracefully (e.g., constant windows)
             logger.warning(f"Failed to compute graph for window {i}: {e}")
-            result['n_nodes'][i] = 0
-            result['n_edges'][i] = 0
-            result['avg_degree'][i] = np.nan
-            result['std_degree'][i] = np.nan
-            result['density'][i] = np.nan
+            result["n_nodes"][i] = 0
+            result["n_edges"][i] = 0
+            result["avg_degree"][i] = np.nan
+            result["std_degree"][i] = np.nan
+            result["density"][i] = np.nan
 
     return result
-

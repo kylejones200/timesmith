@@ -9,7 +9,6 @@ import pandas as pd
 from timesmith.core.base import BaseForecaster
 from timesmith.core.tags import set_tags
 from timesmith.results.forecast import Forecast
-from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +31,9 @@ class LinearTrendForecaster(BaseForecaster):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "LinearTrendForecaster":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "LinearTrendForecaster":
         """Fit linear trend to training data.
 
         Args:
@@ -44,7 +45,9 @@ class LinearTrendForecaster(BaseForecaster):
             Self for method chaining.
         """
         if X is not None:
-            logger.warning("Exogenous data X not yet supported in LinearTrendForecaster")
+            logger.warning(
+                "Exogenous data X not yet supported in LinearTrendForecaster"
+            )
 
         if isinstance(y, pd.Series):
             self.y_ = y.values
@@ -87,7 +90,9 @@ class LinearTrendForecaster(BaseForecaster):
         self._check_is_fitted()
 
         if X is not None:
-            logger.warning("Exogenous data X not yet supported in LinearTrendForecaster")
+            logger.warning(
+                "Exogenous data X not yet supported in LinearTrendForecaster"
+            )
 
         # Convert fh to integer
         if isinstance(fh, (int, np.integer)):
@@ -131,4 +136,3 @@ class LinearTrendForecaster(BaseForecaster):
                 "method": "linear_trend",
             },
         )
-

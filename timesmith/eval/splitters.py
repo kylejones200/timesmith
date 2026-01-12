@@ -1,7 +1,7 @@
 """Time series cross-validation splitters."""
 
 import logging
-from typing import Any, Iterator, Optional, Tuple
+from typing import Any, Iterator, Tuple
 
 import pandas as pd
 
@@ -153,4 +153,3 @@ class SlidingWindowSplit:
 
             train_start += self.step_size
             fold_id += 1
-

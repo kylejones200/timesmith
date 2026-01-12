@@ -138,9 +138,7 @@ def parametric_confidence_intervals(
         Tuple of (mean_forecast, lower_bound, upper_bound) as numpy arrays.
     """
     if not hasattr(model, "get_forecast"):
-        raise AttributeError(
-            "Model must have 'get_forecast' method for parametric CIs"
-        )
+        raise AttributeError("Model must have 'get_forecast' method for parametric CIs")
 
     forecast_result = model.get_forecast(steps=forecast_steps)
     mean_forecast = forecast_result.predicted_mean.values
@@ -150,4 +148,3 @@ def parametric_confidence_intervals(
     upper_bound = conf_int.iloc[:, 1].values
 
     return mean_forecast, lower_bound, upper_bound
-

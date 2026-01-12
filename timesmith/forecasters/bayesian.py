@@ -1,7 +1,7 @@
 """Bayesian forecasting with uncertainty quantification using MCMC."""
 
 import logging
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -9,14 +9,14 @@ import pandas as pd
 from timesmith.core.base import BaseForecaster
 from timesmith.core.tags import set_tags
 from timesmith.results.forecast import Forecast
-from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
 
 # Optional PyMC for Bayesian inference
 try:
-    import pymc as pm
     import arviz as az
+    import pymc as pm
+
     PYMC_AVAILABLE = True
 except ImportError:
     PYMC_AVAILABLE = False
@@ -82,7 +82,9 @@ class BayesianForecaster(BaseForecaster):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "BayesianForecaster":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "BayesianForecaster":
         """Fit Bayesian model using MCMC.
 
         Args:
@@ -126,9 +128,7 @@ class BayesianForecaster(BaseForecaster):
         self._is_fitted = True
         return self
 
-    def _fit_bayesian_model(
-        self, time: np.ndarray, y: np.ndarray
-    ) -> tuple:
+    def _fit_bayesian_model(self, time: np.ndarray, y: np.ndarray) -> tuple:
         """Fit Bayesian model using PyMC.
 
         Args:
@@ -319,8 +319,13 @@ class BayesianForecaster(BaseForecaster):
             y_int=y_int,
             metadata={
                 "n_samples": n_posterior_samples,
-                "std": std_forecast.tolist() if isinstance(std_forecast, np.ndarray) else std_forecast,
-                "quantiles": {k: v.tolist() if isinstance(v, np.ndarray) else v for k, v in quantiles.items()},
+                "std": std_forecast.tolist()
+                if isinstance(std_forecast, np.ndarray)
+                else std_forecast,
+                "quantiles": {
+                    k: v.tolist() if isinstance(v, np.ndarray) else v
+                    for k, v in quantiles.items()
+                },
                 "model_type": self.model_type,
             },
         )
@@ -372,4 +377,3 @@ class BayesianForecaster(BaseForecaster):
         """
         self._check_is_fitted()
         return az.summary(self.trace_)
-

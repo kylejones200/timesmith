@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from timesmith.core.base import (
+from timesmith.core.base import (  # noqa: E402
     BaseDetector,
     BaseEstimator,
     BaseFeaturizer,
@@ -12,7 +12,7 @@ from timesmith.core.base import (
     BaseObject,
     BaseTransformer,
 )
-from timesmith.core.featurizers import (
+from timesmith.core.featurizers import (  # noqa: E402
     DegradationRateFeaturizer,
     DifferencingFeaturizer,
     LagFeaturizer,
@@ -20,24 +20,25 @@ from timesmith.core.featurizers import (
     SeasonalFeaturizer,
     TimeFeaturizer,
 )
-from timesmith.core.tags import get_tags, set_tags
-from timesmith.core.transformers import (
+from timesmith.core.tags import get_tags, set_tags  # noqa: E402
+from timesmith.core.transformers import (  # noqa: E402
     MissingDateFiller,
     MissingValueFiller,
     OutlierRemover,
     Resampler,
 )
-from timesmith.core.validate import validate_input
+from timesmith.core.validate import validate_input  # noqa: E402
 
 # Decomposition (always available - no optional deps)
 try:
     from timesmith.core.decomposition import (
-        DecomposeTransformer,
-        DetrendTransformer,
-        DeseasonalizeTransformer,
-        detect_trend,
-        detect_seasonality,
+        DecomposeTransformer,  # noqa: F401
+        DeseasonalizeTransformer,  # noqa: F401
+        DetrendTransformer,  # noqa: F401
+        detect_seasonality,  # noqa: F401
+        detect_trend,  # noqa: F401
     )
+
     HAS_DECOMPOSITION = True
 except ImportError as e:
     HAS_DECOMPOSITION = False
@@ -46,11 +47,12 @@ except ImportError as e:
 # Change point detection (requires optional ruptures)
 try:
     from timesmith.core.changepoint import (
-        PELTDetector,
-        BayesianChangePointDetector,
-        CUSUMDetector,
-        preprocess_for_changepoint,
+        BayesianChangePointDetector,  # noqa: F401
+        CUSUMDetector,  # noqa: F401
+        PELTDetector,  # noqa: F401
+        preprocess_for_changepoint,  # noqa: F401
     )
+
     HAS_CHANGEPOINT = True
 except ImportError:
     HAS_CHANGEPOINT = False
@@ -58,9 +60,10 @@ except ImportError:
 # Filters (requires optional scipy)
 try:
     from timesmith.core.filters import (
-        ButterworthFilter,
-        SavitzkyGolayFilter,
+        ButterworthFilter,  # noqa: F401
+        SavitzkyGolayFilter,  # noqa: F401
     )
+
     HAS_FILTERS = True
 except ImportError:
     HAS_FILTERS = False
@@ -68,10 +71,11 @@ except ImportError:
 # Advanced outlier detection (optional sklearn for IsolationForest)
 try:
     from timesmith.core.outliers import (
-        HampelOutlierRemover,
-        IsolationForestOutlierRemover,
-        ZScoreOutlierRemover,
+        HampelOutlierRemover,  # noqa: F401
+        IsolationForestOutlierRemover,  # noqa: F401
+        ZScoreOutlierRemover,  # noqa: F401
     )
+
     HAS_ADVANCED_OUTLIERS = True
 except ImportError:
     HAS_ADVANCED_OUTLIERS = False
@@ -79,18 +83,19 @@ except ImportError:
 # Wavelet methods (optional PyWavelets)
 try:
     from timesmith.core.wavelet import (
-        WaveletDenoiser,
-        WaveletDetector,
+        WaveletDenoiser,  # noqa: F401
+        WaveletDetector,  # noqa: F401
     )
+
     HAS_WAVELET = True
 except ImportError:
     HAS_WAVELET = False
 
 # Seasonal baseline detection (always available)
-from timesmith.core.seasonal import SeasonalBaselineDetector
+from timesmith.core.seasonal import SeasonalBaselineDetector  # noqa: E402, F401
 
 # Ensemble detection (always available)
-from timesmith.core.ensemble_detector import VotingEnsembleDetector
+from timesmith.core.ensemble_detector import VotingEnsembleDetector  # noqa: E402, F401
 
 __all__ = [
     "BaseObject",
@@ -116,48 +121,57 @@ __all__ = [
 
 # Conditionally add decomposition exports
 if HAS_DECOMPOSITION:
-    __all__.extend([
-        "DecomposeTransformer",
-        "DetrendTransformer",
-        "DeseasonalizeTransformer",
-        "detect_trend",
-        "detect_seasonality",
-    ])
+    __all__.extend(
+        [
+            "DecomposeTransformer",
+            "DetrendTransformer",
+            "DeseasonalizeTransformer",
+            "detect_trend",
+            "detect_seasonality",
+        ]
+    )
 
 # Conditionally add change point detection exports
 if HAS_CHANGEPOINT:
-    __all__.extend([
-        "PELTDetector",
-        "BayesianChangePointDetector",
-        "CUSUMDetector",
-        "preprocess_for_changepoint",
-    ])
+    __all__.extend(
+        [
+            "PELTDetector",
+            "BayesianChangePointDetector",
+            "CUSUMDetector",
+            "preprocess_for_changepoint",
+        ]
+    )
 
 # Conditionally add filter exports
 if HAS_FILTERS:
-    __all__.extend([
-        "ButterworthFilter",
-        "SavitzkyGolayFilter",
-    ])
+    __all__.extend(
+        [
+            "ButterworthFilter",
+            "SavitzkyGolayFilter",
+        ]
+    )
 
 # Conditionally add advanced outlier detection exports
 if HAS_ADVANCED_OUTLIERS:
-    __all__.extend([
-        "HampelOutlierRemover",
-        "IsolationForestOutlierRemover",
-        "ZScoreOutlierRemover",
-    ])
+    __all__.extend(
+        [
+            "HampelOutlierRemover",
+            "IsolationForestOutlierRemover",
+            "ZScoreOutlierRemover",
+        ]
+    )
 
 # Conditionally add wavelet exports
 if HAS_WAVELET:
-    __all__.extend([
-        "WaveletDenoiser",
-        "WaveletDetector",
-    ])
+    __all__.extend(
+        [
+            "WaveletDenoiser",
+            "WaveletDetector",
+        ]
+    )
 
 # Seasonal baseline detector (always available)
 __all__.append("SeasonalBaselineDetector")
 
 # Ensemble detector (always available)
 __all__.append("VotingEnsembleDetector")
-

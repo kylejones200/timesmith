@@ -156,4 +156,3 @@ def make_pipeline(*steps: BaseTransformer) -> Pipeline:
     """
     named_steps = [(f"step{i}", step) for i, step in enumerate(steps)]
     return Pipeline(named_steps)
-

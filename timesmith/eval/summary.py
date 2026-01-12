@@ -1,9 +1,7 @@
 """Summary functions for backtest results."""
 
 import logging
-from typing import Dict, Optional
-
-import pandas as pd
+from typing import Dict
 
 from timesmith.results.backtest import BacktestResult
 
@@ -28,4 +26,3 @@ def summarize_backtest(result: BacktestResult) -> Dict:
         summary["per_fold_metrics"] = result.per_fold_metrics.copy()
 
     return summary
-

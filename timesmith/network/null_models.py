@@ -5,8 +5,8 @@ for time series network analysis.
 """
 
 import logging
-from typing import Callable, Dict, Literal, Optional
 from dataclasses import dataclass
+from typing import Callable, Literal, Optional
 
 import numpy as np
 
@@ -57,7 +57,7 @@ def generate_surrogate(
     x: np.ndarray,
     method: SurrogateMethod = "shuffle",
     rng: Optional[np.random.Generator] = None,
-    **kwargs
+    **kwargs,
 ) -> np.ndarray:
     """Generate a surrogate time series using the specified method.
 
@@ -99,7 +99,7 @@ def generate_surrogate(
         # Full IAAFT is more complex, this is a basic implementation
         target_amplitude = np.abs(np.fft.fft(x))
         surrogate = rng.permutation(x)
-        for _ in range(kwargs.get('max_iter', 100)):
+        for _ in range(kwargs.get("max_iter", 100)):
             fft_surrogate = np.fft.fft(surrogate)
             phases = np.angle(fft_surrogate)
             fft_surrogate = target_amplitude * np.exp(1j * phases)
@@ -112,16 +112,18 @@ def generate_surrogate(
 
     elif method == "block_bootstrap":
         # Block bootstrap (preserves local structure) - vectorized
-        block_size = kwargs.get('block_size', 10)
+        block_size = kwargs.get("block_size", 10)
         n_blocks = (len(x) + block_size - 1) // block_size
         # Extract blocks using vectorized indexing
-        block_indices = np.arange(n_blocks)[:, None] * block_size + np.arange(block_size)
+        block_indices = np.arange(n_blocks)[:, None] * block_size + np.arange(
+            block_size
+        )
         block_indices = np.clip(block_indices, 0, len(x) - 1)
         blocks = x[block_indices]
         # Sample blocks
         sampled_indices = rng.integers(0, n_blocks, size=n_blocks)
         sampled_blocks = blocks[sampled_indices]
-        return sampled_blocks.flatten()[:len(x)]
+        return sampled_blocks.flatten()[: len(x)]
 
     else:
         raise ValueError(f"Unknown method: {method}")
@@ -135,7 +137,7 @@ def compute_network_metric_significance(
     alpha: float = 0.05,
     metric_name: str = "metric",
     rng: Optional[np.random.Generator] = None,
-    **kwargs
+    **kwargs,
 ) -> NetworkSignificanceResult:
     """Test significance of a network metric against null distribution.
 
@@ -181,6 +183,7 @@ def compute_network_metric_significance(
         z_score = float((observed - null_mean) / null_std)
         # Two-tailed p-value (approximate, using normal distribution)
         from scipy import stats
+
         p_value = float(2 * (1 - stats.norm.cdf(abs(z_score))))
     else:
         z_score = 0.0
@@ -206,4 +209,3 @@ def compute_network_metric_significance(
         confidence_interval=confidence_interval,
         alpha=alpha,
     )
-

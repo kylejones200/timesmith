@@ -12,13 +12,17 @@ logger = logging.getLogger(__name__)
 
 try:
     from numba import njit, prange
+
     HAS_NUMBA = True
 except ImportError:
     HAS_NUMBA = False
+
     def njit(*args, **kwargs):
         def decorator(func):
             return func
+
         return decorator
+
     prange = range
 
 
@@ -165,19 +169,19 @@ def _create_sequences_with_exog_numba(
     X_values: np.ndarray, y_values: np.ndarray, lookback: int, forecast_horizon: int
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Numba-optimized sequence creation with exogenous variables.
-    
+
     Args:
         X_values: Exogenous variables (n_samples, n_exog_features).
         y_values: Target values (n_samples, 1).
         lookback: Lookback window size.
         forecast_horizon: Forecast horizon.
-    
+
     Returns:
         Tuple of (X_seq, y_seq, y_target) arrays.
     """
     n_samples = len(y_values)
     n_seq = n_samples - lookback - forecast_horizon + 1
-    
+
     if n_seq <= 0:
         n_exog = X_values.shape[1] if X_values.ndim > 1 else 1
         return (
@@ -185,16 +189,15 @@ def _create_sequences_with_exog_numba(
             np.empty((0, lookback, 1)),
             np.empty((0, forecast_horizon, 1)),
         )
-    
+
     n_exog = X_values.shape[1] if X_values.ndim > 1 else 1
     X_seq = np.zeros((n_seq, lookback, n_exog), dtype=np.float64)
     y_seq = np.zeros((n_seq, lookback, 1), dtype=np.float64)
     y_target = np.zeros((n_seq, forecast_horizon, 1), dtype=np.float64)
-    
+
     for i in prange(n_seq):
         X_seq[i] = X_values[i - lookback : i].reshape(lookback, -1)
         y_seq[i] = y_values[i - lookback : i].reshape(lookback, -1)
         y_target[i] = y_values[i : i + forecast_horizon].reshape(forecast_horizon, -1)
-    
-    return X_seq, y_seq, y_target
 
+    return X_seq, y_seq, y_target

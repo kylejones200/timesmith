@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 try:
     import networkx as nx
     from networkx.algorithms import community
+
     HAS_NETWORKX = True
     HAS_COMMUNITY = True
 except ImportError:
@@ -147,7 +148,9 @@ def compute_path_lengths(
     if sample_size and G_und.number_of_nodes() > sample_size:
         # Sample node pairs for large graphs
         nodes = list(G_und.nodes())
-        sampled = np.random.choice(nodes, size=min(sample_size, len(nodes)), replace=False)
+        sampled = np.random.choice(
+            nodes, size=min(sample_size, len(nodes)), replace=False
+        )
         path_lengths = []
         for i, u in enumerate(sampled):
             for v in sampled[i + 1 :]:
@@ -169,7 +172,9 @@ def compute_path_lengths(
                     nx.average_shortest_path_length(G_und, weight=weight)
                 )
             else:
-                results["avg_path_length"] = float(nx.average_shortest_path_length(G_und))
+                results["avg_path_length"] = float(
+                    nx.average_shortest_path_length(G_und)
+                )
         except (nx.NetworkXError, nx.NetworkXNoPath):
             results["avg_path_length"] = np.nan
 
@@ -261,7 +266,9 @@ def compute_modularity(
             )
         except TypeError:
             # Fallback for older NetworkX versions
-            communities_generator = community.greedy_modularity_communities(G_und, weight=weight)
+            communities_generator = community.greedy_modularity_communities(
+                G_und, weight=weight
+            )
         communities = list(communities_generator)
     elif method == "label_propagation":
         communities_dict = community.label_propagation_communities(G_und)
@@ -386,23 +393,38 @@ def graph_summary(
             L = nx.average_shortest_path_length(und)
             C = nx.average_clustering(und)
             k_bar = 2.0 * und.number_of_edges() / und.number_of_nodes()
-            p = (2.0 * und.number_of_edges()) / (und.number_of_nodes() * (und.number_of_nodes() - 1))
+            p = (2.0 * und.number_of_edges()) / (
+                und.number_of_nodes() * (und.number_of_nodes() - 1)
+            )
             C_er = p
             if k_bar > 1.0:
                 import math
+
                 L_er = math.log(und.number_of_nodes()) / math.log(k_bar)
             else:
                 L_er = np.nan
             num = (C / C_er) if C_er > 0 else np.nan
             den = (L / L_er) if (L_er is not None and not np.isnan(L_er)) else np.nan
             sigma = (
-                num / den if (not np.isnan(num) and not np.isnan(den) and den != 0) else np.nan
+                num / den
+                if (not np.isnan(num) and not np.isnan(den) and den != 0)
+                else np.nan
             )
             out.update({"C": C, "L": L, "C_er": C_er, "L_er": L_er, "sigma": sigma})
         else:
-            out.update({"C": np.nan, "L": np.nan, "C_er": np.nan, "L_er": np.nan, "sigma": np.nan})
+            out.update(
+                {
+                    "C": np.nan,
+                    "L": np.nan,
+                    "C_er": np.nan,
+                    "L_er": np.nan,
+                    "sigma": np.nan,
+                }
+            )
     except (nx.NetworkXError, nx.NetworkXNoPath):
-        out.update({"C": np.nan, "L": np.nan, "C_er": np.nan, "L_er": np.nan, "sigma": np.nan})
+        out.update(
+            {"C": np.nan, "L": np.nan, "C_er": np.nan, "L_er": np.nan, "sigma": np.nan}
+        )
 
     # Add motif counts if requested
     if motifs in ("directed3", "all") and G.is_directed():
@@ -414,4 +436,3 @@ def graph_summary(
         out["motifs_undirected_4"] = {}  # Placeholder
 
     return out
-

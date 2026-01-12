@@ -5,7 +5,7 @@ Do not validate inside inner loops.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from timesmith.exceptions import ValidationError
 from timesmith.typing.validators import assert_panel, assert_series, assert_table
@@ -57,6 +57,9 @@ def validate_input(
         # Wrap validation errors from validators with context
         raise ValidationError(
             str(e),
-            context={"name": name, "scitype": scitype, "original_error": type(e).__name__},
+            context={
+                "name": name,
+                "scitype": scitype,
+                "original_error": type(e).__name__,
+            },
         ) from e
-

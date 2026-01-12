@@ -1,7 +1,7 @@
 """Black-Scholes Monte Carlo forecaster for asset price forecasting."""
 
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -9,7 +9,6 @@ import pandas as pd
 from timesmith.core.base import BaseForecaster
 from timesmith.core.tags import set_tags
 from timesmith.results.forecast import Forecast
-from timesmith.typing import SeriesLike
 from timesmith.utils.monte_carlo import black_scholes_monte_carlo
 
 logger = logging.getLogger(__name__)
@@ -70,7 +69,9 @@ class BlackScholesMonteCarloForecaster(BaseForecaster):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "BlackScholesMonteCarloForecaster":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "BlackScholesMonteCarloForecaster":
         """Fit the forecaster to historical data.
 
         Args:
@@ -124,16 +125,15 @@ class BlackScholesMonteCarloForecaster(BaseForecaster):
             # Generate future dates if we have a datetime index
             if isinstance(self.y_.index, pd.DatetimeIndex):
                 last_date = self.y_.index[-1]
-                freq = pd.infer_freq(self.y_.index) or 'D'
+                freq = pd.infer_freq(self.y_.index) or "D"
                 forecast_index = pd.date_range(
                     start=last_date + pd.Timedelta(days=1),
                     periods=forecast_days,
-                    freq=freq
+                    freq=freq,
                 )
             else:
                 forecast_index = pd.RangeIndex(
-                    start=len(self.y_),
-                    stop=len(self.y_) + forecast_days
+                    start=len(self.y_), stop=len(self.y_) + forecast_days
                 )
         elif isinstance(fh, (list, np.ndarray, pd.Index)):
             forecast_days = len(fh)
@@ -221,8 +221,12 @@ class BlackScholesMonteCarloForecaster(BaseForecaster):
             # Fallback: approximate from existing quantiles
             if "quantiles" in forecast.metadata:
                 # Interpolate from existing quantiles
-                lower = forecast.metadata["quantiles"].get("p05", forecast.y_pred.values * 0.9)
-                upper = forecast.metadata["quantiles"].get("p95", forecast.y_pred.values * 1.1)
+                lower = forecast.metadata["quantiles"].get(
+                    "p05", forecast.y_pred.values * 0.9
+                )
+                upper = forecast.metadata["quantiles"].get(
+                    "p95", forecast.y_pred.values * 1.1
+                )
             else:
                 # Re-generate if needed
                 return self.predict(fh, X, **predict_params)
@@ -233,5 +237,3 @@ class BlackScholesMonteCarloForecaster(BaseForecaster):
         )
 
         return forecast
-
-

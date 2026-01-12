@@ -28,7 +28,9 @@ def node_roles(
     try:
         from sklearn.cluster import KMeans
     except ImportError:
-        raise ImportError("scikit-learn is required for node roles. Install with: pip install scikit-learn")
+        raise ImportError(
+            "scikit-learn is required for node roles. Install with: pip install scikit-learn"
+        )
 
     if features != "basic":
         raise ValueError("Only 'basic' features supported.")
@@ -52,7 +54,9 @@ def node_roles(
 
     core = nx.core_number(H)
     core = np.array([core[n] for n in nodes], dtype=float)
-    btw = np.array(list(nx.betweenness_centrality(H, normalized=True).values()), dtype=float)
+    btw = np.array(
+        list(nx.betweenness_centrality(H, normalized=True).values()), dtype=float
+    )
     clo = np.array(list(nx.closeness_centrality(H).values()), dtype=float)
 
     # Stack features and normalize
@@ -65,4 +69,3 @@ def node_roles(
 
     assign = {n: int(c) for n, c in zip(nodes, lab)}
     return assign, km.cluster_centers_
-

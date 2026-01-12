@@ -8,7 +8,7 @@ import pandas as pd
 
 from timesmith.core.base import BaseForecaster
 from timesmith.eval.metrics import mae, mape, rmse
-from timesmith.eval.splitters import ExpandingWindowSplit, SlidingWindowSplit
+from timesmith.eval.splitters import ExpandingWindowSplit
 from timesmith.results.backtest import BacktestResult
 from timesmith.tasks.forecast import ForecastTask
 
@@ -46,14 +46,20 @@ def backtest_forecaster(
 
     for train_idx, test_idx, cutoff in splitter.split(task.y):
         # Get train/test splits
-        y_train = task.y.iloc[train_idx] if hasattr(task.y, "iloc") else task.y[train_idx]
+        y_train = (
+            task.y.iloc[train_idx] if hasattr(task.y, "iloc") else task.y[train_idx]
+        )
         y_test = task.y.iloc[test_idx] if hasattr(task.y, "iloc") else task.y[test_idx]
 
         X_train = None
         X_test = None
         if task.X is not None:
-            X_train = task.X.iloc[train_idx] if hasattr(task.X, "iloc") else task.X[train_idx]
-            X_test = task.X.iloc[test_idx] if hasattr(task.X, "iloc") else task.X[test_idx]
+            X_train = (
+                task.X.iloc[train_idx] if hasattr(task.X, "iloc") else task.X[train_idx]
+            )
+            X_test = (
+                task.X.iloc[test_idx] if hasattr(task.X, "iloc") else task.X[test_idx]
+            )
 
         # Fit forecaster
         logger.debug(f"Fitting forecaster for fold {fold_id}")
@@ -88,14 +94,16 @@ def backtest_forecaster(
                 metric_values[metric_func.__name__] = None
 
         # Store results
-        results_rows.append({
-            "fold_id": fold_id,
-            "cutoff": cutoff,
-            "fh": task.fh,
-            "y_true": y_test,
-            "y_pred": y_pred,
-            **metric_values,
-        })
+        results_rows.append(
+            {
+                "fold_id": fold_id,
+                "cutoff": cutoff,
+                "fh": task.fh,
+                "y_true": y_test,
+                "y_pred": y_pred,
+                **metric_values,
+            }
+        )
 
         fold_id += 1
 
@@ -140,7 +148,7 @@ def _align_predictions(y_pred: Any, y_test: Any) -> Any:
         if len(y_pred) == len(y_test):
             return y_pred.values
         elif len(y_pred) > len(y_test):
-            return y_pred.iloc[:len(y_test)].values
+            return y_pred.iloc[: len(y_test)].values
         else:
             # Pad with last value if needed
             last_val = y_pred.iloc[-1]
@@ -164,4 +172,3 @@ def _align_predictions(y_pred: Any, y_test: Any) -> Any:
         # Pad with last value
         last_val = y_pred[-1]
         return np.concatenate([y_pred, [last_val] * (n - len(y_pred))])
-

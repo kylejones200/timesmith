@@ -3,7 +3,7 @@
 Implements k-NN, ε-NN, and weighted network builders from distance matrices.
 """
 
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import networkx as nx
 import numpy as np
@@ -11,15 +11,19 @@ import numpy as np
 # Try to import numba for JIT compilation (optional)
 try:
     from numba import njit, prange
+
     HAS_NUMBA = True
 except ImportError:
     HAS_NUMBA = False
+
     def njit(*args, **kwargs):
         def decorator(func):
             return func
+
         if args and callable(args[0]):
             return args[0]
         return decorator
+
     prange = range
 
 
@@ -59,7 +63,7 @@ def net_knn(
     k: int,
     mutual: bool = False,
     weighted: bool = False,
-    directed: bool = False
+    directed: bool = False,
 ) -> Tuple[nx.Graph, np.ndarray]:
     """k-Nearest Neighbors network from distance matrix.
 
@@ -81,7 +85,7 @@ def net_knn(
         raise ValueError(f"D must be square, got shape {D.shape}")
 
     if k <= 0 or k >= n:
-        raise ValueError(f"k must be in range [1, {n-1}], got {k}")
+        raise ValueError(f"k must be in range [1, {n - 1}], got {k}")
 
     # Use Numba JIT if available (much faster for large matrices)
     if HAS_NUMBA and n > 50:  # Only use JIT for larger matrices
@@ -90,6 +94,7 @@ def net_knn(
         except Exception as e:
             # Fallback to Python implementation
             import logging
+
             logger = logging.getLogger(__name__)
             logger.warning(f"Numba JIT failed for k-NN, using Python fallback: {e}")
             # Continue to Python implementation below
@@ -149,7 +154,7 @@ def net_enn(
     epsilon: Optional[float] = None,
     percentile: Optional[float] = None,
     weighted: bool = False,
-    directed: bool = False
+    directed: bool = False,
 ) -> Tuple[nx.Graph, np.ndarray]:
     """ε-Nearest Neighbors network from distance matrix.
 
@@ -205,4 +210,3 @@ def net_enn(
         G.add_edges_from(edges)
 
     return G, A
-

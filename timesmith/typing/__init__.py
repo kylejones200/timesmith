@@ -38,4 +38,3 @@ __all__ = [
     "assert_panel_like",
     "assert_table",
 ]
-

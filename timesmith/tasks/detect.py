@@ -39,4 +39,3 @@ class DetectTask:
     def __repr__(self) -> str:
         """String representation of the task."""
         return f"DetectTask(horizon={self.horizon})"
-

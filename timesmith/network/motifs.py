@@ -39,7 +39,10 @@ def directed_3node_motifs(G: nx.DiGraph) -> Dict:
         motifs[code] = motifs.get(code, 0) + 1
 
     total = sum(motifs.values())
-    return {k: {"count": v, "freq": v / total if total > 0 else 0.0} for k, v in motifs.items()}
+    return {
+        k: {"count": v, "freq": v / total if total > 0 else 0.0}
+        for k, v in motifs.items()
+    }
 
 
 def undirected_4node_motifs(G: nx.Graph) -> Dict:
@@ -85,6 +88,6 @@ def undirected_4node_motifs(G: nx.Graph) -> Dict:
 
     total = sum(motifs.values())
     return {
-        k: {"count": v, "freq": v / total if total > 0 else 0.0} for k, v in motifs.items()
+        k: {"count": v, "freq": v / total if total > 0 else 0.0}
+        for k, v in motifs.items()
     }
-

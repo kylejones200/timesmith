@@ -9,13 +9,13 @@ from scipy import signal
 
 from timesmith.core.base import BaseTransformer
 from timesmith.core.tags import set_tags
-from timesmith.typing import SeriesLike
 
 logger = logging.getLogger(__name__)
 
 # Optional scipy for advanced filters
 try:
     from scipy.signal import butter, filtfilt
+
     SCIPY_AVAILABLE = True
 except ImportError:
     SCIPY_AVAILABLE = False
@@ -57,7 +57,9 @@ class ButterworthFilter(BaseTransformer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "ButterworthFilter":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "ButterworthFilter":
         """Fit the filter (no-op, but required by interface).
 
         Args:
@@ -155,7 +157,9 @@ class SavitzkyGolayFilter(BaseTransformer):
             requires_sorted_index=True,
         )
 
-    def fit(self, y: Any, X: Optional[Any] = None, **fit_params: Any) -> "SavitzkyGolayFilter":
+    def fit(
+        self, y: Any, X: Optional[Any] = None, **fit_params: Any
+    ) -> "SavitzkyGolayFilter":
         """Fit the filter (no-op, but required by interface).
 
         Args:
@@ -212,4 +216,3 @@ class SavitzkyGolayFilter(BaseTransformer):
         )
 
         return pd.Series(filtered_values, index=self.index_)
-

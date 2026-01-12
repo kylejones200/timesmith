@@ -1,7 +1,6 @@
 """Runtime validators for time series data structures."""
 
 import logging
-from typing import Union
 
 import pandas as pd
 
@@ -151,4 +150,3 @@ def assert_table(data: object, name: str = "data") -> None:
 # Aliases for consistency with naming convention
 assert_series_like = assert_series
 assert_panel_like = assert_panel
-

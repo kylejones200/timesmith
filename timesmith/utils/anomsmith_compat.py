@@ -16,7 +16,7 @@ downstream repos like anomsmith.
 """
 
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 # Try to import anomsmith
 try:
     import anomsmith as am
+
     HAS_ANOMSMITH = True
 except ImportError:
     HAS_ANOMSMITH = False
@@ -59,9 +60,7 @@ def convert_to_anomsmith_format(data: SeriesLike) -> np.ndarray:
 
 
 def convert_from_anomsmith_format(
-    results: Any,
-    index: Optional[pd.Index] = None,
-    name: str = "result"
+    results: Any, index: Optional[pd.Index] = None, name: str = "result"
 ) -> pd.Series:
     """Convert AnomSmith results to TimeSmith SeriesLike format.
 
@@ -102,15 +101,13 @@ def get_anomsmith_detector(detector_name: str, **params) -> Any:
         ValueError: If detector name is not found.
     """
     if not HAS_ANOMSMITH:
-        raise ImportError(
-            "anomsmith is required. Install with: pip install anomsmith"
-        )
+        raise ImportError("anomsmith is required. Install with: pip install anomsmith")
 
     if hasattr(am, detector_name):
         detector_class = getattr(am, detector_name)
         return detector_class(**params)
     else:
-        available = [x for x in dir(am) if not x.startswith('_')]
+        available = [x for x in dir(am) if not x.startswith("_")]
         raise ValueError(
             f"AnomSmith detector '{detector_name}' not found. "
             f"Available detectors: {available}"
@@ -129,13 +126,15 @@ def list_anomsmith_detectors() -> list:
     # Filter for detector-like classes (heuristic)
     detectors = []
     for name in dir(am):
-        if name.startswith('_'):
+        if name.startswith("_"):
             continue
         obj = getattr(am, name)
         if isinstance(obj, type):
             # Check if it looks like a detector (has predict, detect, or score)
-            if any(hasattr(obj, method) for method in ['predict', 'detect', 'score', 'fit', 'train']):
+            if any(
+                hasattr(obj, method)
+                for method in ["predict", "detect", "score", "fit", "train"]
+            ):
                 detectors.append(name)
 
     return sorted(detectors)
-
