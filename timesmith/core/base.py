@@ -196,8 +196,6 @@ class BaseForecaster(BaseEstimator):
         Returns:
             Number of periods to forecast.
         """
-        import numpy as np
-
         if isinstance(fh, (list, tuple)) or hasattr(fh, "__len__"):
             # Check if it's a numpy array or list-like
             if hasattr(fh, "shape"):  # numpy array
