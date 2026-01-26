@@ -6,8 +6,8 @@ We actively support the following versions of TimeSmith with security updates:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
-| < 0.1   | :x:                |
+| 0.1.x   | Yes                |
+| < 0.1   | No                 |
 
 ## Reporting a Vulnerability
 
