@@ -1,3 +1,7 @@
+# LEGACY: This file is kept for ReadTheDocs compatibility.
+# The source of truth for dependencies is pyproject.toml.
+# For local development, use: uv sync --extra docs
+#
 # Documentation requirements for ReadTheDocs
 # Core dependencies
 pandas>=1.5.0
@@ -21,6 +25,7 @@ sphinx-autodoc-typehints>=1.20
 # PyWavelets>=1.4.0
 # tslearn>=0.6.0
 # numba>=0.57.0
+
 
 
 

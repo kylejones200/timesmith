@@ -92,17 +92,17 @@ pip install timesmith
 ## Development
 
 ```bash
-# Install in development mode
-pip install -e ".[dev]"
+# Install dependencies (requires uv: https://github.com/astral-sh/uv)
+uv sync --group dev
 
 # Run tests
-pytest tests/
+uv run pytest tests/
 
 # Format code
-black timesmith tests
+uv run black timesmith tests
 
 # Run linting
-flake8 timesmith tests
+uv run ruff check timesmith tests
 ```
 
 ## Features
@@ -181,6 +181,5 @@ configure_logging(level="INFO")
 - `scipy` - For filters, changepoint detection, distances (install: `pip install timesmith[scipy]`)
 - `networkx` - For network analysis features (install: `pip install timesmith[network]`)
 - See `pyproject.toml` for all optional dependency groups
-- networkx >= 3.0
 
 See `pyproject.toml` for optional dependencies for specific forecasters.

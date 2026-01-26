@@ -24,15 +24,14 @@ cd timesmith
 ### 2. Set Up Development Environment
 
 ```bash
-# Create a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# Install uv if not already installed: https://github.com/astral-sh/uv
+# curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install in development mode with all dependencies
-pip install -e ".[dev,docs,all]"
+# Install dependencies (uv handles virtual environment automatically)
+uv sync --group dev
 
-# Install pre-commit hooks
-pre-commit install
+# For full development with docs and examples:
+uv sync --group dev --extra docs --extra examples
 ```
 
 ### 3. Create a Branch
@@ -46,14 +45,14 @@ git checkout -b feature/your-feature-name
 
 ### Code Style
 
-We use Black for code formatting and flake8 for linting:
+We use Black for code formatting and ruff for linting:
 
 ```bash
 # Format code
-black timesmith tests
+uv run black timesmith tests
 
 # Check linting
-flake8 timesmith tests
+uv run ruff check timesmith tests
 ```
 
 Key conventions:
@@ -69,10 +68,10 @@ All new features and bug fixes should include tests:
 
 ```bash
 # Run all tests
-pytest tests/
+uv run pytest tests/
 
 # Run with coverage
-pytest tests/ --cov=timesmith --cov-report=html
+uv run pytest tests/ --cov=timesmith --cov-report=html
 ```
 
 Test guidelines:
@@ -129,10 +128,10 @@ Commit message format:
 
 Before submitting a PR, ensure:
 
-- All tests pass: `pytest tests/`
-- Code is formatted: `black timesmith tests`
-- Linting passes: `ruff check timesmith tests`
-- Type checking (optional): `mypy timesmith`
+- All tests pass: `uv run pytest tests/`
+- Code is formatted: `uv run black timesmith tests`
+- Linting passes: `uv run ruff check timesmith tests`
+- Type checking (optional): `uv run mypy timesmith`
 - Documentation builds: `cd docs && make html`
 - New features have tests
 - New features have documentation
