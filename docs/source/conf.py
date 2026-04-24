@@ -1,6 +1,5 @@
 """Sphinx configuration for TimeSmith documentation."""
 
-import os
 import sys
 from pathlib import Path
 

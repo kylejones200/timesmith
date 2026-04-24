@@ -3,5 +3,6 @@ repos:
     rev: v0.1.15
     hooks:
       - id: ruff
-        args: [--select, E,F, --ignore, E501, --fix]
+        # Quote "E,F" so YAML does not split into separate args (ruff would treat "F" as a path).
+        args: [--select, "E,F", --ignore, E501, --fix]
       - id: ruff-format
