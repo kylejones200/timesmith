@@ -27,7 +27,8 @@ forecasters = [
   "statsmodels>=0.14.0,<1.0.0",  # For ExponentialSmoothingForecaster, VARForecaster, and stationarity tests
 ]
 deep_learning = [
-  "darts>=0.28.0,<1.0.0",  # For LSTMForecaster and other deep learning models
+  # LSTMForecaster uses Darts RNN (PyTorch) only, not Prophet or darts[notorch].
+  "darts>=0.28.0,<1.0.0",
 ]
 kalman = [
   "filterpy>=1.4.5,<2.0.0",  # For KalmanFilterForecaster

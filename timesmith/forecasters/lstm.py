@@ -1,6 +1,7 @@
-"""LSTM forecaster implementation using Darts."""
+"""LSTM forecaster implementation using Darts (PyTorch RNN only; no Prophet)."""
 
 import logging
+import os
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
@@ -16,27 +17,42 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-try:
-    from darts import TimeSeries as DartsTimeSeries
-    from darts.dataprocessing.transformers import Scaler
-    from darts.models import RNNModel
+# Lazy import: importing darts at module load can pull optional models and emit
+# noisy logs for unrelated optional deps. We load only RNN + TimeSeries + Scaler.
+DartsTimeSeries: Any = None
+RNNModel: Any = None
+Scaler: Any = None
+HAS_DARTS: Optional[bool] = None
 
-    HAS_DARTS = True
-except ImportError:
-    DartsTimeSeries = None
-    RNNModel = None
-    Scaler = None
-    HAS_DARTS = False
-    logger.warning(
-        "darts not installed. LSTMForecaster will not work. "
-        "Install with: pip install darts"
-    )
+
+def _ensure_darts() -> bool:
+    """Load darts on first use; return True if available."""
+    global DartsTimeSeries, RNNModel, Scaler, HAS_DARTS
+    if HAS_DARTS is not None:
+        return HAS_DARTS
+    try:
+        # Avoid darts.models package __getattr__ noise for unused optional models.
+        os.environ.setdefault("DISABLE_DARTS_LOGGING", "1")
+        from darts import TimeSeries as _DartsTimeSeries
+        from darts.dataprocessing.transformers import Scaler as _Scaler
+
+        try:
+            from darts.models.forecasting.rnn_model import RNNModel as _RNNModel
+        except ImportError:
+            from darts.models import RNNModel as _RNNModel
+
+        DartsTimeSeries, Scaler, RNNModel = _DartsTimeSeries, _Scaler, _RNNModel
+        HAS_DARTS = True
+    except ImportError:
+        HAS_DARTS = False
+    return HAS_DARTS
 
 
 class LSTMForecaster(BaseForecaster):
-    """LSTM forecaster using Darts RNNModel.
+    """LSTM forecaster using Darts ``RNNModel`` (PyTorch only).
 
-    Uses Long Short-Term Memory networks for time series forecasting.
+    TimeSmith does not provide Facebook Prophet or other Darts Prophet bindings;
+    this class only uses Darts' recurrent neural network stack.
     """
 
     def __init__(
@@ -62,7 +78,7 @@ class LSTMForecaster(BaseForecaster):
             scale: Whether to scale the data (default: True).
             **darts_params: Additional Darts RNNModel parameters.
         """
-        if not HAS_DARTS:
+        if not _ensure_darts():
             raise ImportError(
                 "darts is required for LSTMForecaster. Install with: pip install darts"
             )
